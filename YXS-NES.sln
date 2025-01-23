@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nes.Widget", "Nes.Widget\Nes.Widget.csproj", "{790C6EA8-B841-47CB-AB5B-20CC54C62175}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nes.Core", "Nes.Core\Nes.Core.csproj", "{5892AA9F-02C2-40D0-AB53-784881ED5E5B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{790C6EA8-B841-47CB-AB5B-20CC54C62175}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{790C6EA8-B841-47CB-AB5B-20CC54C62175}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{790C6EA8-B841-47CB-AB5B-20CC54C62175}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{790C6EA8-B841-47CB-AB5B-20CC54C62175}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5892AA9F-02C2-40D0-AB53-784881ED5E5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5892AA9F-02C2-40D0-AB53-784881ED5E5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5892AA9F-02C2-40D0-AB53-784881ED5E5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5892AA9F-02C2-40D0-AB53-784881ED5E5B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
