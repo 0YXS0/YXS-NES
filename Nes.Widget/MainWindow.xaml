@@ -4,13 +4,73 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Nes.Widget"
-        xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
-        ui:ThemeManager.IsThemeAware="True"
-        ui:WindowHelper.SystemBackdropType="Mica"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern" 
         ui:WindowHelper.UseModernWindowStyle="True"
+        ui:WindowHelper.SystemBackdropType="Mica"
+        ui:ThemeManager.IsThemeAware="True"
+        xmlns:Viewmodels="clr-namespace:Nes.Widget.ViewModels"
+        d:DataContext="{d:DesignInstance Type=Viewmodels:MainWindowVM}"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        WindowStartupLocation="CenterScreen"
+        Title="{Binding Title}" Height="480" Width="512">
     <Grid>
-    
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Row="0" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.Resources>
+                <Style TargetType="ui:AppBarButton">
+                    <Setter Property="Height" Value="60"/>
+                    <Setter Property="Width" Value="40"/>
+                </Style>
+                <Style TargetType="ui:AppBarToggleButton">
+                    <Setter Property="Height" Value="60"/>
+                    <Setter Property="Width" Value="40"/>
+                </Style>
+            </Grid.Resources>
+            <StackPanel Grid.Row="0" Grid.Column="0" Width="40">
+                <ui:AppBarButton Label="打开" Command="{Binding OpenFileCommand}">
+                    <ui:AppBarButton.Icon>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Game}" FontSize="20"/>
+                    </ui:AppBarButton.Icon>
+                </ui:AppBarButton>
+                <ui:AppBarToggleButton 
+                    Label="暂停" 
+                    IsChecked="{Binding IsPauseBtnClicked, Mode=OneWayToSource}"
+                    Command="{Binding PauseGameCommand}">
+                    <ui:AppBarToggleButton.Icon>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Pause}"/>
+                    </ui:AppBarToggleButton.Icon>
+                </ui:AppBarToggleButton>
+                <ui:AppBarButton Label="存档">
+                    <ui:AppBarButton.Icon>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Save}"/>
+                    </ui:AppBarButton.Icon>
+                </ui:AppBarButton>
+                <ui:AppBarButton Label="读档">
+                    <ui:AppBarButton.Icon>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Download}"/>
+                    </ui:AppBarButton.Icon>
+                </ui:AppBarButton>
+                <ui:AppBarToggleButton Label="联机">
+                    <ui:AppBarToggleButton.Icon>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.InternetSharing}"/>
+                    </ui:AppBarToggleButton.Icon>
+                </ui:AppBarToggleButton>
+            </StackPanel>
+            <ui:AppBarButton Grid.Column="0" Grid.Row="1" Label="设置">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}"/>
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+        </Grid>
+        <Image x:Name="MainImage" Grid.Row="0" Grid.Column="1" Margin="0,0,3,3"
+               Source="{Binding BitImage}"/>
     </Grid>
 </Window>

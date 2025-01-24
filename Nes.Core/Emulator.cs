@@ -105,6 +105,8 @@ public class Emulator
 
     private bool _stop = true;
 
+    private readonly object _lockObject = new( );
+
     #endregion Private Fields
 
     #region Public Constructors
@@ -155,6 +157,8 @@ public class Emulator
     public Ppu Ppu => _ppu.Value;
 
     public bool Running => !_stop;
+
+    public bool IsPaused { get; set; }
 
     #endregion Public Properties
 
@@ -257,6 +261,15 @@ public class Emulator
         var stopwatch = new Stopwatch( );   // 创建一个计时器
         while(!_stop)
         {
+            lock(_lockObject)
+            {
+                while(IsPaused)
+                {
+                    Console.WriteLine("线程暂停...");
+                    Monitor.Wait(_lockObject); // 等待被唤醒
+                }
+            }
+
             stopwatch.Restart( );
             ExecuteStep( ); // 进行一帧画面的模拟
             stopwatch.Stop( );
@@ -271,6 +284,29 @@ public class Emulator
     public void Stop( )
     {
         _stop = true;
+    }
+
+    /// <summary>
+    /// 暂停模拟器的运行。
+    /// </summary>
+    public void Pause( )
+    {
+        lock(_lockObject)
+        {
+            IsPaused = true;
+        }
+    }
+
+    /// <summary>
+    /// 取消暂停模拟器。
+    /// </summary>
+    public void Resume( )
+    {
+        lock(_lockObject)
+        {
+            IsPaused = false;
+            Monitor.Pulse(_lockObject); // 唤醒等待的线程
+        }
     }
 
     #endregion Public Methods
