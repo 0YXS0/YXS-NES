@@ -13,6 +13,7 @@ partial class MainWindowVM : ObservableObject
 
     public event EventHandler<string>? GameStartEvent;
     public event EventHandler? GamePauseEvent;
+    public event EventHandler? GameSettingEvent;
 
     private const string m_OriginTitle = "YXS-NES · 本地";   // 原始标题
     [ObservableProperty]
@@ -46,6 +47,12 @@ partial class MainWindowVM : ObservableObject
     private void PauseGame( )
     {
         GamePauseEvent?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private void Setting( )
+    {
+        GameSettingEvent?.Invoke(this, EventArgs.Empty);
     }
 }
 

@@ -17,12 +17,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent( );
         DataContext = m_MainWindowVM;
+        m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
+
         m_MainWindowVM.GameStartEvent += (object? sender, string fileName) =>
         {
             if(m_GameControl.IsGameRunning)
                 m_GameControl.StopGame( );
             m_GameControl.OpenGame(fileName);
         };
+
         m_MainWindowVM.GamePauseEvent += (object? sender, EventArgs e) =>
         {
             if(m_GameControl.IsGameRunning)
@@ -34,7 +37,11 @@ public partial class MainWindow : Window
             }
         };
 
-        m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
+        m_MainWindowVM.GameSettingEvent += async (object? sender, EventArgs e) =>
+        {
+            SettingWindow settingWindow = new( );
+            var res = await settingWindow.ShowAsync( );
+        };
     }
 
     private void DrawFrame(object? sender, EventArgs e)

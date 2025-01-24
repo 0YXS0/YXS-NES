@@ -64,7 +64,7 @@
                     </ui:AppBarToggleButton.Icon>
                 </ui:AppBarToggleButton>
             </StackPanel>
-            <ui:AppBarButton Grid.Column="0" Grid.Row="1" Label="设置">
+            <ui:AppBarButton Grid.Column="0" Grid.Row="1" Label="设置" Command="{Binding SettingCommand}">
                 <ui:AppBarButton.Icon>
                     <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}"/>
                 </ui:AppBarButton.Icon>
