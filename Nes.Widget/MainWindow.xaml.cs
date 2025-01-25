@@ -1,5 +1,9 @@
-﻿using Nes.Widget.ViewModels;
+﻿using iNKORE.UI.WPF.Modern.Controls;
+using Nes.Widget.ViewModels;
 using NesEmu.Console;
+using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
@@ -12,6 +16,13 @@ public partial class MainWindow : Window
 {
     private readonly GameControl m_GameControl = new( );
     private readonly MainWindowVM m_MainWindowVM = MainWindowVM.Instance;
+    private readonly SettingWindowVM m_SettingWindowVM = SettingWindowVM.Instance;
+    private readonly SettingWindow m_SettingWindow = new( );
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new( )
+    {
+        WriteIndented = true,   // 缩进
+        Converters = { new JsonStringEnumConverter( ) } // 使用数字表示枚举
+    };
 
     public MainWindow( )
     {
@@ -39,9 +50,23 @@ public partial class MainWindow : Window
 
         m_MainWindowVM.GameSettingEvent += async (object? sender, EventArgs e) =>
         {
-            SettingWindow settingWindow = new( );
-            var res = await settingWindow.ShowAsync( );
+            m_SettingWindow.DataContext = m_SettingWindowVM;
+            var res = await m_SettingWindow.ShowAsync( );
+            if(res == ContentDialogResult.Primary)
+            {
+                // 序列化为 JSON
+                string str = JsonSerializer.Serialize(m_SettingWindowVM, JsonSerializerOptions);
+                File.WriteAllText("setting.json", str);
+            }
         };
+
+        // 反序列化
+        if(File.Exists("setting.json"))
+        {
+            string str = File.ReadAllText("setting.json");
+            m_SettingWindowVM = JsonSerializer.Deserialize<SettingWindowVM>(str, JsonSerializerOptions)
+                ?? SettingWindowVM.Instance;
+        }
     }
 
     private void DrawFrame(object? sender, EventArgs e)

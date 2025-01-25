@@ -5,8 +5,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ikw="http://schemas.inkore.net/lib/ui/wpf"
     xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
-    xmlns:viewmodels="clr-namespace:Nes.Widget.ViewModels"
-    d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowVM}"
+    xmlns:Viewmodels="clr-namespace:Nes.Widget.ViewModels" 
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    d:DataContext="{d:DesignInstance Type=Viewmodels:SettingWindowVM}"
     Title="按键设置"
     d:DesignHeight="480"
     d:DesignWidth="512"
@@ -18,23 +19,36 @@
         <Grid.Resources>
             <Style TargetType="Label">
                 <Setter Property="FontSize" Value="16"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="VerticalAlignment" Value="Stretch"/>
                 <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
             </Style>
             <Style TargetType="Border">
                 <Setter Property="BorderBrush" Value="Black"/>
                 <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="VerticalAlignment" Value="Stretch"/>
+            </Style>
+            <Style TargetType="ToggleButton"
+                   BasedOn="{StaticResource {x:Static ui:ThemeKeys.DefaultToggleButtonStyleKey}}">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="VerticalAlignment" Value="Stretch"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
             </Style>
         </Grid.Resources>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="65"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="85"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="65"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="85"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -70,51 +84,115 @@
             <Border Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="3" Content="上"/>
-            <Label Grid.Column="3" Grid.Row="3" Content="按键W"/>
+            <ToggleButton Grid.Column="3" Grid.Row="3" Content="{Binding P1Up, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="3" Content="上"/>
-            <Label Grid.Column="7" Grid.Row="3" Content="按键W"/>
+            <ToggleButton Grid.Column="7" Grid.Row="3" Content="{Binding P2Up, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="5" Content="下"/>
-            <Label Grid.Column="3" Grid.Row="5" Content="按键S"/>
+            <ToggleButton Grid.Column="3" Grid.Row="5" Content="{Binding P1Down, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="5" Content="下"/>
-            <Label Grid.Column="7" Grid.Row="5" Content="按键S"/>
+            <ToggleButton Grid.Column="7" Grid.Row="5" Content="{Binding P2Down, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="7" Content="左"/>
-            <Label Grid.Column="3" Grid.Row="7" Content="按键A"/>
+            <ToggleButton Grid.Column="3" Grid.Row="7" Content="{Binding P1Left, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="7" Content="左"/>
-            <Label Grid.Column="7" Grid.Row="7" Content="按键A"/>
+            <ToggleButton Grid.Column="7" Grid.Row="7" Content="{Binding P2Left, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="9" Content="右"/>
-            <Label Grid.Column="3" Grid.Row="9" Content="按键D"/>
+            <ToggleButton Grid.Column="3" Grid.Row="9" Content="{Binding P1Right, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="9" Content="右"/>
-            <Label Grid.Column="7" Grid.Row="9" Content="按键D"/>
+            <ToggleButton Grid.Column="7" Grid.Row="9" Content="{Binding P2Right, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="10" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="11" Content="A"/>
-            <Label Grid.Column="3" Grid.Row="11" Content="按键J"/>
+            <ToggleButton Grid.Column="3" Grid.Row="11" Content="{Binding P1A, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="11" Content="A"/>
-            <Label Grid.Column="7" Grid.Row="11" Content="按键J"/>
+            <ToggleButton Grid.Column="7" Grid.Row="11" Content="{Binding P2A, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="12" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="13" Content="B"/>
-            <Label Grid.Column="3" Grid.Row="13" Content="按键K"/>
+            <ToggleButton Grid.Column="3" Grid.Row="13" Content="{Binding P1B, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="13" Content="B"/>
-            <Label Grid.Column="7" Grid.Row="13" Content="按键K"/>
+            <ToggleButton Grid.Column="7" Grid.Row="13" Content="{Binding P2B, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="14" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="15" Content="Start"/>
-            <Label Grid.Column="3" Grid.Row="15" Content="Enter"/>
+            <ToggleButton Grid.Column="3" Grid.Row="15" Content="{Binding P1Start, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="15" Content="Start"/>
-            <Label Grid.Column="7" Grid.Row="15" Content="Enter"/>
+            <ToggleButton Grid.Column="7" Grid.Row="15" Content="{Binding P2Start, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="16" Grid.ColumnSpan="9"/>
 
             <Label Grid.Column="1" Grid.Row="17" Content="Select"/>
-            <Label Grid.Column="3" Grid.Row="17" Content="Space"/>
+            <ToggleButton Grid.Column="3" Grid.Row="17" Content="{Binding P1Select, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Label Grid.Column="5" Grid.Row="17" Content="Select"/>
-            <Label Grid.Column="7" Grid.Row="17" Content="Space"/>
+            <ToggleButton Grid.Column="7" Grid.Row="17" Content="{Binding P2Select, Mode=TwoWay}">
+                <i:Interaction.Behaviors>
+                    <Viewmodels:SelectKeyBehavior/>
+                </i:Interaction.Behaviors>
+            </ToggleButton>
             <Border Grid.Column="0" Grid.Row="18" Grid.ColumnSpan="9"/>
         </Grid>
     </Grid>

@@ -8,7 +8,6 @@
         xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern" 
         ui:WindowHelper.UseModernWindowStyle="True"
         ui:WindowHelper.SystemBackdropType="Mica"
-        ui:ThemeManager.IsThemeAware="True"
         xmlns:Viewmodels="clr-namespace:Nes.Widget.ViewModels"
         d:DataContext="{d:DesignInstance Type=Viewmodels:MainWindowVM}"
         mc:Ignorable="d"
