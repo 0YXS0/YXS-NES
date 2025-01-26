@@ -34,7 +34,8 @@ internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
         return address switch
         {
             < 0x2000 => _emulator.InstalledCartridge?.ReadChr(address) ?? default,
-            >= 0x8000 => _emulator.InstalledCartridge?.PrgRom[MapAddress(_emulator.InstalledCartridge, address)] ??
+            >= 0x8000 => _emulator.InstalledCartridge?.PrgRom[MapAddress(_emulator.InstalledCartridge, address)]
+                         ??
                          default,
             _ => 0
         };

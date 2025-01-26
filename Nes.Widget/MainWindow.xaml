@@ -27,10 +27,12 @@
                 <Style TargetType="ui:AppBarButton">
                     <Setter Property="Height" Value="60"/>
                     <Setter Property="Width" Value="40"/>
+                    <Setter Property="Focusable" Value="False"/>
                 </Style>
                 <Style TargetType="ui:AppBarToggleButton">
                     <Setter Property="Height" Value="60"/>
                     <Setter Property="Width" Value="40"/>
+                    <Setter Property="Focusable" Value="False"/>
                 </Style>
             </Grid.Resources>
             <StackPanel Grid.Row="0" Grid.Column="0" Width="40">

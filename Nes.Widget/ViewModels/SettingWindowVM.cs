@@ -10,9 +10,6 @@ internal partial class SettingWindowVM : ObservableObject
 {
     public static SettingWindowVM Instance { get; } = new( );
 
-    //public SettingKeyInfo P1Info { get; set; } = new("P1");
-    //public SettingKeyInfo P2Info { get; set; } = new("P2");
-
     [ObservableProperty]
     private string m_P1Up = "按键W";
 

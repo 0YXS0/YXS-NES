@@ -274,7 +274,7 @@ public class Emulator
             ExecuteStep( ); // 进行一帧画面的模拟
             stopwatch.Stop( );
 
-            Thread.Sleep(Math.Max((int)(10 - stopwatch.ElapsedMilliseconds), 0));
+            Thread.Sleep(Math.Max((int)(15 - stopwatch.ElapsedMilliseconds), 0));
         }
     }
 

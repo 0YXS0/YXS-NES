@@ -6,7 +6,7 @@
 //using System.Xml.Schema;
 //using System.Xml.Serialization;
 
-//namespace NesEmu.Console.Models
+//namespace Nes.Console.Models
 //{
 //    [XmlRoot]
 //    public sealed class ConsoleSettings

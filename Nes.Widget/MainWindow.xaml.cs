@@ -1,10 +1,13 @@
 ﻿using iNKORE.UI.WPF.Modern.Controls;
+using Nes.Console.Models;
 using Nes.Widget.ViewModels;
 using NesEmu.Console;
+using NesEmu.Core;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace Nes.Widget;
@@ -28,6 +31,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent( );
         DataContext = m_MainWindowVM;
+        this.KeyDown += KeyDownHandle;
+        this.KeyUp += KeyUphandle;
+        this.MouseDown += MouseDownHandle;
+        this.MouseUp += MouseUpHandle;
         m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
 
         m_MainWindowVM.GameStartEvent += (object? sender, string fileName) =>
@@ -67,6 +74,54 @@ public partial class MainWindow : Window
             m_SettingWindowVM = JsonSerializer.Deserialize<SettingWindowVM>(str, JsonSerializerOptions)
                 ?? SettingWindowVM.Instance;
         }
+    }
+
+    private void MouseUpHandle(object sender, MouseButtonEventArgs e)
+    {
+        var key = ControlKey.ToKeyType(e.ChangedButton);
+        ProcessKey(1, key, false);
+        ProcessKey(2, key, false);
+    }
+
+    private void MouseDownHandle(object sender, MouseButtonEventArgs e)
+    {
+        var key = ControlKey.ToKeyType(e.ChangedButton);
+        ProcessKey(1, key, true);
+        ProcessKey(2, key, true);
+    }
+
+    private void KeyUphandle(object sender, KeyEventArgs e)
+    {
+        var key = ControlKey.ToKeyType(e.Key);
+        ProcessKey(1, key, false);
+        ProcessKey(2, key, false);
+    }
+
+    private void KeyDownHandle(object sender, KeyEventArgs e)
+    {
+        var key = ControlKey.ToKeyType(e.Key);
+        ProcessKey(1, key, true);
+        ProcessKey(2, key, true);
+    }
+
+    private void ProcessKey(int Px, ControlKey.KeyType key, bool state)
+    {
+        if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1Up))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.Up, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1Down))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.Down, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1Left))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.Left, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1Right))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.Right, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1A))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.A, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1B))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.B, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1Start))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.Start, state);
+        else if(key == ControlKey.ToKeyType(m_SettingWindowVM.P1Select))
+            m_GameControl.SetButtonState(Px, Controller.Buttons.Select, state);
     }
 
     private void DrawFrame(object? sender, EventArgs e)

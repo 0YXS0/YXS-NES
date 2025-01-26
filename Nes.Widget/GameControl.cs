@@ -37,11 +37,6 @@ internal class GameControl
     /// </summary>
     public ColorPalette SelectedColorPalette { get; set; }
 
-    /// <summary>
-    /// 选择的控制器设置
-    /// </summary>
-    //public ControllerSetting SelectedControllerSetting { get; set; }
-
     public Thread GameThread { get => m_gameThread; }
 
     private readonly Emulator m_emulator = new( );   // 模拟器
@@ -57,7 +52,6 @@ internal class GameControl
         m_emulator.DrawFrame += Emulator_DrawFrame; // 画帧事件
 
         SelectedColorPalette = ColorPalette.GetColorPaletteByName("Default");   // 选择默认颜色调色板
-        //SelectedControllerSetting = ControllerSetting.Default;  // 选择默认控制器设置
     }
 
     /// <summary>
@@ -105,6 +99,18 @@ internal class GameControl
     public void ResumeGame( )
     {
         m_emulator.Resume( );
+    }
+
+    /// <summary>
+    /// 设置按钮状态
+    /// </summary>
+    /// <param name="Px">玩家编号:1--P1，2--P2</param>
+    /// <param name="btn">按钮</param>
+    /// <param name="state">状态</param>
+    public void SetButtonState(int Px, Controller.Buttons btn, bool state)
+    {
+        if(Px != 1 && Px != 2) return;  // 玩家编号错误
+        m_emulator.Controller.SetButtonState(Px, btn, state);
     }
 
     private void Emulator_DrawFrame(object? sender, DrawFrameEventArgs e)

@@ -85,8 +85,9 @@ public class Bus(Emulator emulator)
         {
             < 0x2000 => _ram[address & 0x07FF],
             >= 0x2000 and <= 0x3fff => emulator.Ppu.ReadRegister(MapPpuRegisterAddress(address)),
-            <= 0x401f and not 0x4016 => 0,
-            0x4016 => emulator.Controller.ReadControllerInput( ),
+            <= 0x401f and not 0x4016 and not 0x4017 => 0,
+            0x4016 => emulator.Controller.ReadControllerInput(1),
+            0x4017 => emulator.Controller.ReadControllerInput(2),
             _ => emulator.Mapper.ReadByte(address) // In case for addresses >= 0x4020
         };
 

@@ -82,7 +82,7 @@ public class Cartridge
         if(UseChrRam)
         {
             // at this point, number of CHR ROM Banks is zero.
-            ChrData = new byte[0x2000];
+            ChrData = new byte[0x2000]; // 8kb
         }
         else
         {
