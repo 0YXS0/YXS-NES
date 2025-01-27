@@ -40,17 +40,13 @@ internal class GameControl
     public Thread GameThread { get => m_gameThread; }
 
     private readonly Emulator m_emulator = new( );   // 模拟器
-    private readonly Thread m_gameThread;   // 游戏线程
+    private Thread m_gameThread;   // 游戏线程
     private readonly byte[] m_Pixels = new byte[256 * 240 * 4];   // 游戏画面颜色
 
     public GameControl( )
     {
-        m_gameThread = new Thread(m_emulator.Run)
-        {
-            IsBackground = true // 后台线程
-        };
+        m_gameThread = new Thread(( ) => { });
         m_emulator.DrawFrame += Emulator_DrawFrame; // 画帧事件
-
         SelectedColorPalette = ColorPalette.GetColorPaletteByName("Default");   // 选择默认颜色调色板
     }
 
@@ -61,6 +57,11 @@ internal class GameControl
     public void OpenGame(string fileName)
     {
         m_emulator.Open(fileName);
+        m_gameThread = new Thread(m_emulator.Run)
+        {
+            IsBackground = true, // 后台线程
+            Name = "GameThread"
+        };
         m_gameThread.Start( );
         GameOpened?.Invoke(this, EventArgs.Empty);  // 触发游戏打开事件
     }
@@ -80,7 +81,8 @@ internal class GameControl
     {
         m_emulator.Stop( );
         // 等待游戏线程结束
-        if(m_gameThread?.ThreadState == ThreadState.Running) m_gameThread.Join( );
+        if(m_gameThread.IsAlive)
+            m_gameThread.Join( );
         GameStopped?.Invoke(this, EventArgs.Empty); // 触发游戏停止事件
     }
 

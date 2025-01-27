@@ -39,9 +39,16 @@ public partial class MainWindow : Window
 
         m_MainWindowVM.GameStartEvent += (object? sender, string fileName) =>
         {
-            if(m_GameControl.IsGameRunning)
-                m_GameControl.StopGame( );
-            m_GameControl.OpenGame(fileName);
+            new Thread(( ) =>
+            {
+                if(m_GameControl.IsGameRunning)
+                    m_GameControl.StopGame( );  // 会阻塞调用线程, 所以要放在新线程中,防止阻塞主线程
+                m_GameControl.OpenGame(fileName);
+            })
+            {
+                IsBackground = true,
+                Name = "OpenGameThread",
+            }.Start( );
         };
 
         m_MainWindowVM.GamePauseEvent += (object? sender, EventArgs e) =>

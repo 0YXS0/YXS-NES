@@ -103,7 +103,7 @@ public class Emulator
 
     private Mapper? _mapper;
 
-    private bool _stop = true;
+    private volatile bool _stop = true;
 
     private readonly object _lockObject = new( );
 
@@ -241,6 +241,7 @@ public class Emulator
     {
         InstallCartridge(new Cartridge(cartridgeFileName)); // 安装游戏卡带
         Reset( );   // 重置模拟器
+        _stop = false;
     }
 
     /// <summary>
@@ -257,7 +258,6 @@ public class Emulator
     /// </summary>
     public void Run( )
     {
-        _stop = false;
         var stopwatch = new Stopwatch( );   // 创建一个计时器
         while(!_stop)
         {
