@@ -130,17 +130,15 @@ public class Emulator
         Cpu.Stepped += OnCpuStepped;
 
         Apu.SampleRate = 44100;  // 音频采样率
-        // connect APU DMC to memory
-        //Audio.Dmc.ReadMemorySample = (address) =>
-        //{
-        //    Processor.State.StallCycles += 4;
-        //    return Memory[address];
-        //};
-
-        // wire IRQ between audio and processor
-        //Audio.TriggerInterruptRequest = Processor.TriggerInterruptRequest;
-
-        //Audio.Dmc.TriggerInterruptRequest = Processor.TriggerInterruptRequest;
+        //设置DMC读取内存的方法
+        Apu.Dmc.ReadMemorySample = (address) =>
+        {
+            Cpu.AddIdleCycles(4);
+            return Bus.ReadByte(address);
+        };
+        //处理APU中断请求
+        Apu.TriggerInterruptRequest = Cpu.TriggerIrqInterrupt;
+        Apu.Dmc.TriggerInterruptRequest = Cpu.TriggerIrqInterrupt;
     }
 
     private void OnCpuStepped(object? sender, CpuStepEventArgs e)

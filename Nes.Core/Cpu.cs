@@ -147,6 +147,11 @@ public class Cpu
     /// </summary>
     private bool _nmiInterruptTriggered;
 
+    /// <summary>
+    /// 可屏蔽中断触发标志
+    /// </summary>
+    private bool _irqInterruptTriggered;
+
     #endregion Private Fields
 
     #region Public Constructors
@@ -323,6 +328,12 @@ public class Cpu
             _nmiInterruptTriggered = false; // 清除NMI触发标志
         }
 
+        if(_irqInterruptTriggered && !_flag.I)
+        {/// 发生IRQ(可屏蔽中断)
+            Interrupt(InterruptType.Irq);   // 执行中断
+            _irqInterruptTriggered = false; // 清除IRQ触发标志
+        }
+
         var origCycles = Cycles;
         var opcode = _bus.ReadByte(_pc);    // 通过PC寻址获取操作码
         var mode = (AddressingMode)_addressingModes[opcode];    // 获取操作码对应的寻址模式
@@ -356,6 +367,15 @@ public class Cpu
     public void TriggerNmiInterrupt( )
     {
         _nmiInterruptTriggered = true;
+    }
+
+
+    /// <summary>
+    /// 触发IRQ(可屏蔽中断)
+    /// </summary>
+    public void TriggerIrqInterrupt( )
+    {
+        _irqInterruptTriggered = true;
     }
 
     #endregion Public Methods

@@ -61,12 +61,15 @@ internal partial class SettingWindowVM : ObservableObject
 
 internal class SelectKeyBehavior : Behavior<ToggleButton>
 {
+    private static bool m_haveButtonClicked = false;   // 是否有按钮已经被点击
+
     protected override void OnAttached( )
     {
-        AssociatedObject.Click += (sender, _) =>
+        AssociatedObject.Click += static (sender, _) =>
         {
             if(sender is ToggleButton obj)
             {
+                m_haveButtonClicked = true;
                 obj.Content = "按键?";
             }
         };
@@ -83,6 +86,7 @@ internal class SelectKeyBehavior : Behavior<ToggleButton>
                 return;
             obj.Content = ControlKey.KeyTypeToString(ControlKey.ToKeyType(e.Key));
             obj.IsChecked = false;
+            m_haveButtonClicked = false;
         }
     }
 
@@ -91,10 +95,15 @@ internal class SelectKeyBehavior : Behavior<ToggleButton>
         if(sender is ToggleButton obj)
         {
             if(obj.IsChecked == false)
+            {
+                if(m_haveButtonClicked)
+                    e.Handled = true;   // 已经有按钮处于点击状态, 则取消当前按钮的点击行为
                 return;
+            }
             e.Handled = true;   // 取消默认行为
             obj.IsChecked = false;
             obj.Content = ControlKey.KeyTypeToString(ControlKey.ToKeyType(e.ChangedButton));
+            m_haveButtonClicked = false;
         }
     }
 }

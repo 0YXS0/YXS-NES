@@ -4,6 +4,7 @@ using Nes.Widget.ViewModels;
 using NesEmu.Console;
 using NesEmu.Core;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
@@ -67,10 +68,24 @@ public partial class MainWindow : Window
             m_SettingWindow.DataContext = m_SettingWindowVM;
             var res = await m_SettingWindow.ShowAsync( );
             if(res == ContentDialogResult.Primary)
-            {
-                // 序列化为 JSON
+            {// 将设置序列化到文件
                 string str = JsonSerializer.Serialize(m_SettingWindowVM, JsonSerializerOptions);
                 File.WriteAllText("setting.json", str);
+            }
+            else
+            {// 取消设置, 从文件中重新加载设置
+                if(File.Exists("setting.json"))
+                {
+                    string str = File.ReadAllText("setting.json");
+                    SettingWindowVM VM = JsonSerializer.Deserialize<SettingWindowVM>(str, JsonSerializerOptions)
+                        ?? SettingWindowVM.Instance;
+
+                    var props = m_SettingWindowVM.GetType( ).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                    foreach(var prop in props)
+                    {
+                        prop.SetValue(m_SettingWindowVM, prop.GetValue(VM));
+                    }
+                }
             }
         };
 
@@ -133,10 +148,12 @@ public partial class MainWindow : Window
 
     private void DrawFrame(object? sender, EventArgs e)
     {
-        Dispatcher.Invoke(( ) =>
+        Dispatcher.BeginInvoke(( ) =>
         {
-            WriteableBitmap bitmap = MainWindowVM.Instance.BitImage;
+            WriteableBitmap bitmap = m_MainWindowVM.BitImage;
             bitmap.WritePixels(new Int32Rect(0, 0, 256, 240), m_GameControl.Pixels, 256 * 4, 0);
         });
     }
 }
+
+

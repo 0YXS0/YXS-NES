@@ -46,7 +46,7 @@ public class ControlKey
             KeyType.X => "按键X",
             KeyType.Y => "按键Y",
             KeyType.Z => "按键Z",
-            _ => string.Empty,
+            _ => "未知按键",
         };
     }
 
