@@ -1,14 +1,4 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using NesEmu.Core.Mappers;
+﻿using NesEmu.Core.Mappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -71,9 +61,13 @@ public class Emulator
 
             var cpuCycles = Cpu.Step( );
             for(var i = 0; i < cpuCycles * 3; i++)
-            {
-                // PPU runs 3x faster than CPU
+            {/// PPU runs 3x faster than CPU
                 Ppu.Step( );
+            }
+
+            for(var i = 0; i < cpuCycles; i++)
+            {/// APU runs at the same speed as CPU
+                Apu.Step( );
             }
         }
     }
@@ -98,6 +92,8 @@ public class Emulator
     private readonly Lazy<Cpu> _cpu;
 
     private readonly Lazy<Ppu> _ppu;
+
+    private readonly Lazy<Apu> _apu;
 
     private bool _frameflip;
 
@@ -128,9 +124,23 @@ public class Emulator
         _cpu = new Lazy<Cpu>(( ) => cpuResolver(this));
         _bus = new Lazy<Bus>(( ) => busResolver(this));
         _ppu = new Lazy<Ppu>(( ) => ppuResolver(this));
+        _apu = new Lazy<Apu>(( ) => new Apu( ));
         _controller = new Lazy<Controller>(controllerResolver);
 
         Cpu.Stepped += OnCpuStepped;
+
+        Apu.SampleRate = 44100;  // 音频采样率
+        // connect APU DMC to memory
+        //Audio.Dmc.ReadMemorySample = (address) =>
+        //{
+        //    Processor.State.StallCycles += 4;
+        //    return Memory[address];
+        //};
+
+        // wire IRQ between audio and processor
+        //Audio.TriggerInterruptRequest = Processor.TriggerInterruptRequest;
+
+        //Audio.Dmc.TriggerInterruptRequest = Processor.TriggerInterruptRequest;
     }
 
     private void OnCpuStepped(object? sender, CpuStepEventArgs e)
@@ -155,6 +165,8 @@ public class Emulator
                                 "Mapper was not initialized, make sure the cartridge is plugged in.");
 
     public Ppu Ppu => _ppu.Value;
+
+    public Apu Apu => _apu.Value;
 
     public bool Running => !_stop;
 
@@ -274,7 +286,7 @@ public class Emulator
             ExecuteStep( ); // 进行一帧画面的模拟
             stopwatch.Stop( );
 
-            Thread.Sleep(Math.Max((int)(15 - stopwatch.ElapsedMilliseconds), 0));
+            Thread.Sleep(Math.Max((int)(16.667F - stopwatch.ElapsedMilliseconds), 0));
         }
     }
 
