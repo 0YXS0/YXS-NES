@@ -159,8 +159,7 @@ public class Emulator
     public Cartridge? InstalledCartridge { get; private set; }
 
     public Mapper Mapper => _mapper ??
-                            throw new InvalidOperationException(
-                                "Mapper was not initialized, make sure the cartridge is plugged in.");
+                            throw new InvalidOperationException("映射器未初始化，请确保已成功读取卡带文件。");
 
     public Ppu Ppu => _ppu.Value;
 
@@ -242,6 +241,13 @@ public class Emulator
                                  $"不支持当前Mapper{InstalledCartridge.Mapper}");
         _mapper = mapperRegistry.Factory(this);
     }
+
+    /// <summary>
+    /// 检查是否支持指定的Mapper
+    /// </summary>
+    /// <param name="mapperNumber">Mapper号</param>
+    /// <returns></returns>
+    public static bool IsMapperSupported(int mapperNumber) => _registeredMapperTypes.Any(r => r.Number == mapperNumber);
 
     /// <summary>
     /// 打开NES游戏文件

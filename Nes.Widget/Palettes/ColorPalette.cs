@@ -1,7 +1,7 @@
 ﻿// ============================================================================
 using Color = System.Windows.Media.Color;
 
-namespace NesEmu.Console.Palettes;
+namespace NesEmu.Control.Palettes;
 
 /// <summary>
 /// 调色板基类

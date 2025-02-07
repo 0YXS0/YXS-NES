@@ -1,6 +1,6 @@
 ﻿using Color = System.Windows.Media.Color;
 
-namespace NesEmu.Console.Palettes;
+namespace NesEmu.Control.Palettes;
 
 internal sealed class _2C02_2C07_aps_ela_persune_neutral : ColorPalette
 {

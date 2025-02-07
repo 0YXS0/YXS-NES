@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Xaml.Behaviors;
-using Nes.Console.Models;
+using Nes.Widget.Models;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
@@ -8,8 +8,6 @@ namespace Nes.Widget.ViewModels;
 
 internal partial class SettingWindowVM : ObservableObject
 {
-    public static SettingWindowVM Instance { get; } = new( );
-
     [ObservableProperty]
     private string m_P1Up = "按键W";
 

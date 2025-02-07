@@ -1,7 +1,7 @@
 ﻿using iNKORE.UI.WPF.Modern.Controls;
-using Nes.Console.Models;
+using Nes.Widget.Models;
 using Nes.Widget.ViewModels;
-using NesEmu.Console;
+using NesEmu.Control;
 using NesEmu.Core;
 using System.IO;
 using System.Reflection;
@@ -10,8 +10,9 @@ using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using MessageBox = iNKORE.UI.WPF.Modern.Controls.MessageBox;
 
-namespace Nes.Widget;
+namespace Nes.Widget.View;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -20,8 +21,10 @@ public partial class MainWindow : Window
 {
     private readonly GameControl m_GameControl = new( );
     private readonly MainWindowVM m_MainWindowVM = MainWindowVM.Instance;
-    private readonly SettingWindowVM m_SettingWindowVM = SettingWindowVM.Instance;
     private readonly SettingWindow m_SettingWindow = new( );
+    private readonly SettingWindowVM m_SettingWindowVM;
+    private readonly SelectNesFileWindow m_SelectNesFileWindow = new( );
+    private readonly SelectNesFileWindowVM m_SelectNesFileWindowVM;
     private static readonly JsonSerializerOptions JsonSerializerOptions = new( )
     {
         WriteIndented = true,   // 缩进
@@ -32,24 +35,43 @@ public partial class MainWindow : Window
     {
         InitializeComponent( );
         DataContext = m_MainWindowVM;
+        m_SettingWindowVM = (SettingWindowVM)m_SettingWindow.DataContext;
+        m_SelectNesFileWindowVM = (SelectNesFileWindowVM)m_SelectNesFileWindow.DataContext;
         this.KeyDown += KeyDownHandle;
         this.KeyUp += KeyUphandle;
         this.MouseDown += MouseDownHandle;
         this.MouseUp += MouseUpHandle;
         m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
 
-        m_MainWindowVM.GameStartEvent += (object? sender, string fileName) =>
+#if DEBUG   // 调试时让窗口始终在最上层, 方便调试
+        this.Topmost = true;
+#endif
+
+        m_SelectNesFileWindowVM.GameStartEvent += (object? sender, NesFileInfo info) =>
         {
+            if(!info.IsSupported)
+            {
+                MessageBox.Show("不支持的文件格式");
+                return;
+            }
             new Thread(( ) =>
             {
                 if(m_GameControl.IsGameRunning)
                     m_GameControl.StopGame( );  // 会阻塞调用线程, 所以要放在新线程中,防止阻塞主线程
-                m_GameControl.OpenGame(fileName);
+                m_GameControl.OpenGame(info.Path);
             })
             {
                 IsBackground = true,
                 Name = "OpenGameThread",
             }.Start( );
+            m_MainWindowVM.Title = MainWindowVM.OriginTitle + " · " + info.Name;
+            m_SelectNesFileWindow.Hide( );  // 隐藏选择文件窗口
+        };
+
+        m_MainWindowVM.GameOpenEvent += (object? sender, EventArgs e) =>
+        {
+            m_SelectNesFileWindowVM.SelectnesFile("D:\\YXS\\C#_Project\\SimpleFC\\NesFile");
+            m_SelectNesFileWindow.ShowAsync( );
         };
 
         m_MainWindowVM.GamePauseEvent += (object? sender, EventArgs e) =>
@@ -65,7 +87,6 @@ public partial class MainWindow : Window
 
         m_MainWindowVM.GameSettingEvent += async (object? sender, EventArgs e) =>
         {
-            m_SettingWindow.DataContext = m_SettingWindowVM;
             var res = await m_SettingWindow.ShowAsync( );
             if(res == ContentDialogResult.Primary)
             {// 将设置序列化到文件
@@ -78,7 +99,7 @@ public partial class MainWindow : Window
                 {
                     string str = File.ReadAllText("setting.json");
                     SettingWindowVM VM = JsonSerializer.Deserialize<SettingWindowVM>(str, JsonSerializerOptions)
-                        ?? SettingWindowVM.Instance;
+                        ?? m_SettingWindowVM;
 
                     var props = m_SettingWindowVM.GetType( ).GetProperties(BindingFlags.Public | BindingFlags.Instance);
                     foreach(var prop in props)
@@ -89,12 +110,18 @@ public partial class MainWindow : Window
             }
         };
 
-        // 反序列化
+        // 从文件中加载设置
         if(File.Exists("setting.json"))
         {
+            m_SettingWindow.DataContext = null;
             string str = File.ReadAllText("setting.json");
-            m_SettingWindowVM = JsonSerializer.Deserialize<SettingWindowVM>(str, JsonSerializerOptions)
-                ?? SettingWindowVM.Instance;
+            var VM = JsonSerializer.Deserialize<SettingWindowVM>(str, JsonSerializerOptions);
+            m_SettingWindowVM = VM ?? m_SettingWindowVM;
+            m_SettingWindow.DataContext = m_SettingWindowVM;
+            if(VM == null)
+            {
+                Console.WriteLine("读取setting.json设置文件失败。");
+            }
         }
     }
 

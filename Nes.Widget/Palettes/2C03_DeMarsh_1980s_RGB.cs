@@ -1,6 +1,6 @@
 ﻿using Color = System.Windows.Media.Color;
 
-namespace NesEmu.Console.Palettes;
+namespace NesEmu.Control.Palettes;
 
 internal sealed class _2C03_DeMarsh_1980s_RGB : ColorPalette
 {

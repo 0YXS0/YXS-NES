@@ -1,6 +1,6 @@
 ﻿using System.Windows.Input;
 
-namespace Nes.Console.Models;
+namespace Nes.Widget.Models;
 
 /// <summary>
 /// 控制键

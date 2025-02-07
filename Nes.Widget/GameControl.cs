@@ -1,10 +1,10 @@
 ﻿using NAudio.Wave;
-using NesEmu.Console.Palettes;
+using NesEmu.Control.Palettes;
 using NesEmu.Core;
-
+using System.IO;
 using Color = System.Windows.Media.Color;
 
-namespace NesEmu.Console;
+namespace NesEmu.Control;
 
 internal class GameControl
 {
@@ -44,7 +44,7 @@ internal class GameControl
     private Thread m_gameThread;   // 游戏线程
     private readonly byte[] m_Pixels = new byte[256 * 240 * 4];   // 游戏画面颜色
     private readonly WaveOut m_waveOut;    // 音频输出
-    private readonly ApuAudioProvider m_apuAudioProvider = new( );  // 音频提供器
+    private readonly WriteLine m_apuAudioProvider = new( );  // 音频提供器
 
     public GameControl( )
     {
@@ -107,7 +107,6 @@ internal class GameControl
         GameStopped?.Invoke(this, EventArgs.Empty); // 触发游戏停止事件
     }
 
-
     /// <summary>
     /// 暂停游戏
     /// </summary>
@@ -124,6 +123,39 @@ internal class GameControl
     {
         m_emulator.Resume( );
         m_waveOut.Play( );  // 播放音频
+    }
+
+    /// <summary>
+    /// 获取NES文件信息
+    /// </summary>
+    /// <param name="nesFilePath">文件路径</param>
+    /// <returns>（获取信息是否成功，Mapper号，是否支持）</returns>
+    public static async Task<(bool, int, bool)> GetNesFileInfoAsync(string nesFilePath)
+    {
+        using FileStream stream = new(nesFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+        using var binaryReader = new BinaryReader(stream);
+        var fileName = Path.GetFileNameWithoutExtension(nesFilePath);
+        byte[] raw = new byte[10];
+        await stream.ReadAsync(raw); // 异步读取前10个字节
+
+        if(BitConverter.ToInt32(raw, 0) != 0x1A53454E)
+        {
+            Console.WriteLine("不是有效的NES文件:" + fileName);
+            return (false, -1, false);
+        }
+        if(((raw[7] >> 2) & 0b0000_0011) != 0)
+        {
+            Console.WriteLine("不支持的NES文件版本:" + fileName);
+            return (false, -1, false);
+        }
+        if((raw[7] & 1) != 0 || (raw[7] & 2) != 0)
+        {
+            Console.WriteLine("文件不是有效的NES 1.0格式:" + fileName);
+            return (false, -1, false);
+        }
+        var Num = (raw[7] & 0b1111_0000) | (raw[6] >> 4); // Mapper编号
+
+        return (true, Num, Emulator.IsMapperSupported(Num));
     }
 
     /// <summary>
@@ -153,9 +185,9 @@ internal class GameControl
     }
 }
 
-public class ApuAudioProvider : WaveProvider32
+public class WriteLine : WaveProvider32
 {
-    public ApuAudioProvider( )
+    public WriteLine( )
     {
         cyclicBuffer = new float[4096];
         readIndex = writeIndex = 0;
