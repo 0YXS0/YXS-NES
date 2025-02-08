@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NesEmu.Core.Audio.Generators
+namespace Nes.Core.Audio.Generators
 {
     public abstract class WaveGenerator
     {

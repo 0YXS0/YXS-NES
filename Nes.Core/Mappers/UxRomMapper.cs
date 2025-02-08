@@ -10,7 +10,7 @@
 
 using System;
 
-namespace NesEmu.Core.Mappers;
+namespace Nes.Core.Mappers;
 
 [Mapper(0x02, "UxROM")]
 internal sealed class UxRomMapper : Mapper

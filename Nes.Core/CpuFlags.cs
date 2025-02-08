@@ -10,7 +10,7 @@
 
 using System;
 
-namespace NesEmu.Core
+namespace Nes.Core
 {
     public struct CpuFlags : IEquatable<CpuFlags>
     {

@@ -1,8 +1,8 @@
 ﻿using iNKORE.UI.WPF.Modern.Controls;
+using Nes.Core;
+using Nes.Widget.Control;
 using Nes.Widget.Models;
 using Nes.Widget.ViewModels;
-using NesEmu.Control;
-using NesEmu.Core;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
@@ -65,6 +65,7 @@ public partial class MainWindow : Window
                 Name = "OpenGameThread",
             }.Start( );
             m_MainWindowVM.Title = MainWindowVM.OriginTitle + " · " + info.Name;
+            m_GameControl.NesFileInfo = info;   // 保存文件信息
             m_SelectNesFileWindow.Hide( );  // 隐藏选择文件窗口
         };
 

@@ -8,7 +8,7 @@
 // MIT License
 // ============================================================================
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 /// <summary>
 /// 寻址模式

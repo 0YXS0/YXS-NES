@@ -1,4 +1,4 @@
-﻿using NesEmu.Core.Mappers;
+﻿using Nes.Core.Mappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 /// <summary>
 /// NES仿真器

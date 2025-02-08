@@ -1,10 +1,11 @@
 ﻿using NAudio.Wave;
-using NesEmu.Control.Palettes;
-using NesEmu.Core;
+using Nes.Core;
+using Nes.Widget.Models;
+using Nes.Widget.Palettes;
 using System.IO;
 using Color = System.Windows.Media.Color;
 
-namespace NesEmu.Control;
+namespace Nes.Widget.Control;
 
 internal class GameControl
 {
@@ -25,6 +26,11 @@ internal class GameControl
     public event EventHandler? GameDrawFrame;
 
     /// <summary>
+    /// 正在运行的NES文件信息
+    /// </summary>
+    public NesFileInfo? NesFileInfo { get; set; }
+
+    /// <summary>
     /// 游戏是否正在运行
     /// </summary>
     public bool IsGameRunning { get => m_emulator.Running; }
@@ -32,18 +38,15 @@ internal class GameControl
     /// <summary>
     /// 游戏画面颜色
     /// </summary>
-    public byte[] Pixels { get => m_Pixels; }
+    public byte[] Pixels { get; } = new byte[256 * 240 * 4];
 
     /// <summary>
     /// 选择的颜色调色板
     /// </summary>
     public ColorPalette SelectedColorPalette { get; set; }
 
-    public Thread GameThread { get => m_gameThread; }
-
     private readonly Emulator m_emulator = new( );   // 模拟器
     private Thread m_gameThread;   // 游戏线程
-    private readonly byte[] m_Pixels = new byte[256 * 240 * 4];   // 游戏画面颜色
     private readonly WaveOut m_waveOut;    // 音频输出
     private readonly WriteLine m_apuAudioProvider = new( );  // 音频提供器
 
@@ -69,7 +72,7 @@ internal class GameControl
         };
 
         m_gameThread = new Thread(( ) => { Thread.Sleep(1000); });
-        m_emulator.DrawFrame += Emulator_DrawFrame; // 画帧事件
+        m_emulator.DrawFrame += DrawFrameHandle; // 画帧事件
         SelectedColorPalette = ColorPalette.GetColorPaletteByName("Default");   // 选择默认颜色调色板
     }
 
@@ -174,16 +177,19 @@ internal class GameControl
         m_emulator.Controller.SetButtonState(Px, btn, state);
     }
 
-    private void Emulator_DrawFrame(object? sender, DrawFrameEventArgs e)
+    /// <summary>
+    /// 画帧事件处理函数
+    /// </summary>
+    private void DrawFrameHandle(object? sender, DrawFrameEventArgs e)
     {
         var colorBytes = e.BitmapData;
         Parallel.For(0, 256 * 240, i =>
         {
             Color color = SelectedColorPalette.Colors[colorBytes[i]];
-            m_Pixels[i * 4 + 0] = color.B;
-            m_Pixels[i * 4 + 1] = color.G;
-            m_Pixels[i * 4 + 2] = color.R;
-            m_Pixels[i * 4 + 3] = color.A;
+            Pixels[i * 4 + 0] = color.B;
+            Pixels[i * 4 + 1] = color.G;
+            Pixels[i * 4 + 2] = color.R;
+            Pixels[i * 4 + 3] = color.A;
         });
         GameDrawFrame?.Invoke(this, EventArgs.Empty); // 触发游戏画帧事件
     }

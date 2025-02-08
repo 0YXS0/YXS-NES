@@ -1,9 +1,9 @@
-﻿using NesEmu.Core.Audio.Filtering;
-using NesEmu.Core.Audio.Generators;
+﻿using Nes.Core.Audio.Filtering;
+using Nes.Core.Audio.Generators;
 using System;
 using System.IO;
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 public class Apu
 {

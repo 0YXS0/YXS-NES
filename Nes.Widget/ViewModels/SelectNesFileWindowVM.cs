@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Nes.Widget.Control;
 using Nes.Widget.Models;
-using NesEmu.Control;
 using System.IO;
 
 namespace Nes.Widget.ViewModels;

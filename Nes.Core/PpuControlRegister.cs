@@ -8,7 +8,7 @@
 // MIT License
 // ============================================================================
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 /// <summary>
 ///     Represents the PPU control register (PPUCTRL) which includes various flags controlling PPU operation.

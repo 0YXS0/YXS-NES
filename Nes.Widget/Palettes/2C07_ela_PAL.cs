@@ -1,6 +1,6 @@
 ﻿using Color = System.Windows.Media.Color;
 
-namespace NesEmu.Control.Palettes;
+namespace Nes.Widget.Palettes;
 
 internal sealed class _2C07_ela_PAL : ColorPalette
 {

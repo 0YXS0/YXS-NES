@@ -8,11 +8,11 @@
 // MIT License
 // ============================================================================
 
-using NesEmu.Core.Rendering;
+using Nes.Core.Rendering;
 using System;
 using System.IO;
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 /// <summary>
 ///     Represents a Cartridge in the Nintendo Entertainment System (NES).

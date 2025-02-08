@@ -12,7 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 // PPU Memory Map ==============================
 // $0000-$0FFF	$1000	Pattern table 0
 // $1000-$1FFF	$1000	Pattern table 1

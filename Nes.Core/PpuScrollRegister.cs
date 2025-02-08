@@ -8,7 +8,7 @@
 // MIT License
 // ============================================================================
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 /// <summary>
 ///     Represents the PPU scroll register.

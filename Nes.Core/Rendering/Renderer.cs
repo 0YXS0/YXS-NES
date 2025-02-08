@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NesEmu.Core.Rendering
+namespace Nes.Core.Rendering
 {
     public sealed class Renderer
     {

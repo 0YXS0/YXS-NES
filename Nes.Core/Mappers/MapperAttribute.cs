@@ -10,7 +10,7 @@
 
 using System;
 
-namespace NesEmu.Core.Mappers
+namespace Nes.Core.Mappers
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class MapperAttribute : Attribute

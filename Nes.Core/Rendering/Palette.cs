@@ -1,4 +1,4 @@
-﻿namespace NesEmu.Core.Rendering
+﻿namespace Nes.Core.Rendering
 {
     public abstract class Palette
     {

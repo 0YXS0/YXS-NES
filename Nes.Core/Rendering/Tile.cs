@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NesEmu.Core.Rendering
+namespace Nes.Core.Rendering
 {
     public sealed class Tile
     {

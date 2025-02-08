@@ -13,7 +13,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 public class Cpu
 {

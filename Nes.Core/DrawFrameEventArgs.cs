@@ -10,7 +10,7 @@
 
 using System;
 
-namespace NesEmu.Core;
+namespace Nes.Core;
 
 public sealed class DrawFrameEventArgs(byte[] bitmapData) : EventArgs
 {

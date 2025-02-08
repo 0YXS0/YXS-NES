@@ -1,4 +1,4 @@
-﻿namespace NesEmu.Core
+﻿namespace Nes.Core
 {
     internal enum InterruptType
     {

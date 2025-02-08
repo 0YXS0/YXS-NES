@@ -10,7 +10,7 @@
 
 using System;
 
-namespace NesEmu.Core
+namespace Nes.Core
 {
     /// <summary>
     /// Represents the class that carries the CPU stepping or CPU stepped event data.

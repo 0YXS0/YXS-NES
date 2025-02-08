@@ -8,7 +8,7 @@
 // MIT License
 // ============================================================================
 
-namespace NesEmu.Core.Mappers;
+namespace Nes.Core.Mappers;
 
 [Mapper(0, "NROM")]
 internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)

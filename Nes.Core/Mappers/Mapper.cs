@@ -1,4 +1,4 @@
-﻿namespace NesEmu.Core.Mappers
+﻿namespace Nes.Core.Mappers
 {
     public abstract class Mapper(Emulator emulator)
     {

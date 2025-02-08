@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NesEmu.Core.Audio.Filtering
+namespace Nes.Core.Audio.Filtering
 {
     public class FilterChain: Filter
     {

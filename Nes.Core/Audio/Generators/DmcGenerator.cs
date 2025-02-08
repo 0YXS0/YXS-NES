@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace NesEmu.Core.Audio.Generators
+namespace Nes.Core.Audio.Generators
 {
     public class DmcGenerator : WaveGenerator
     {
