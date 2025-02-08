@@ -33,28 +33,28 @@ internal partial class SettingWindowVM : ObservableObject
     private string m_P1Select = "按键N";
 
     [ObservableProperty]
-    private string m_P2Up = "按键↑";
+    private string m_P2Up = "按键W";
 
     [ObservableProperty]
-    private string m_P2Down = "按键↓";
+    private string m_P2Down = "按键S";
 
     [ObservableProperty]
-    private string m_P2Left = "按键←";
+    private string m_P2Left = "按键A";
 
     [ObservableProperty]
-    private string m_P2Right = "按键→";
+    private string m_P2Right = "按键D";
 
     [ObservableProperty]
-    private string m_P2A = "按键NumPad1";
+    private string m_P2A = "按键K";
 
     [ObservableProperty]
-    private string m_P2B = "按键NumPad2";
+    private string m_P2B = "按键J";
 
     [ObservableProperty]
-    private string m_P2Start = "按键NumPad3";
+    private string m_P2Start = "按键B";
 
     [ObservableProperty]
-    private string m_P2Select = "按键NumPad4";
+    private string m_P2Select = "按键N";
 }
 
 internal class SelectKeyBehavior : Behavior<ToggleButton>

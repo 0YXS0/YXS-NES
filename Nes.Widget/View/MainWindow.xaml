@@ -55,17 +55,20 @@
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Pause}" />
                     </ui:AppBarToggleButton.Icon>
                 </ui:AppBarToggleButton>
-                <ui:AppBarButton Label="存档">
+                <ui:AppBarButton Command="{Binding SaveGameCommand}" Label="存档">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Save}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarButton Label="读档">
+                <ui:AppBarButton Command="{Binding LoadGameCommand}" Label="读档">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Download}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarToggleButton Label="联机">
+                <ui:AppBarToggleButton
+                    Command="{Binding OnlineGameCommand}"
+                    IsChecked="{Binding IsOnlineBtnClicked, Mode=OneWayToSource}"
+                    Label="联机">
                     <ui:AppBarToggleButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.InternetSharing}" />
                     </ui:AppBarToggleButton.Icon>

@@ -2,15 +2,16 @@
 using CommunityToolkit.Mvvm.Input;
 using Nes.Widget.Models;
 using NesEmu.Control;
-using System.Collections.ObjectModel;
 using System.IO;
 
 namespace Nes.Widget.ViewModels;
 
 internal partial class SelectNesFileWindowVM : ObservableObject
 {
-    public ObservableCollection<NesFileInfo> Infos { get; set; } = [];
-    public EventHandler<NesFileInfo>? GameStartEvent;
+    public event EventHandler<NesFileInfo>? SelectedNesFileEvent;
+
+    [ObservableProperty]
+    private NesFileInfo[] m_Infos = [];
 
     [ObservableProperty]
     private string m_SearchStr = "";
@@ -20,31 +21,31 @@ internal partial class SelectNesFileWindowVM : ObservableObject
     {
         if(parameter is NesFileInfo info)
         {
-            GameStartEvent?.Invoke(this, info);
+            SelectedNesFileEvent?.Invoke(this, info);
         }
     }
 
-    public async void SelectnesFile(string path)
+    /// <summary>
+    /// 对文件夹内的nes文件进行分析
+    /// </summary>
+    /// <param name="path">文件夹路径</param>
+    public async Task SelectnesFile(string path)
     {
-        Infos.Clear( ); // 清除原有数据
         var nesFiles = Directory.GetFiles(path, "*.nes");
         int i = 0;
-        foreach(var nesFile in nesFiles)
+        var tasks = nesFiles.Select(async (nesFilePath) =>
         {
-            var (res, mapperNum, isSupported) = await GameControl.GetNesFileInfoAsync(nesFile);
-            if(res)
+            var (res, mapperNum, isSupported) = await GameControl.GetNesFileInfoAsync(nesFilePath);
+            return new NesFileInfo
             {
-                var nesFileInfo = new NesFileInfo
-                {
-                    Index = i++,
-                    Name = Path.GetFileNameWithoutExtension(nesFile),
-                    Path = nesFile,
-                    MapperNumber = mapperNum,
-                    IsSupported = isSupported,
-                };
-                Infos.Add(nesFileInfo);
-            }
-        }
+                Index = i++,
+                Name = Path.GetFileNameWithoutExtension(nesFilePath),
+                Path = nesFilePath,
+                MapperNumber = mapperNum,
+                IsSupported = isSupported,
+            };
+        });
+        Infos = [.. (await Task.WhenAll(tasks)).OrderByDescending(info => info.IsSupported)];
     }
 }
 

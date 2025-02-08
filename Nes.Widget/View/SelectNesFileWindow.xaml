@@ -16,9 +16,6 @@
     mc:Ignorable="d">
     <ui:ContentDialog.Resources>
         <CollectionViewSource x:Key="cvInfos" Source="{Binding Infos}">
-            <CollectionViewSource.SortDescriptions>
-                <componentmodel:SortDescription Direction="Descending" PropertyName="IsSupported" />
-            </CollectionViewSource.SortDescriptions>
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="IsSupported" />
             </CollectionViewSource.GroupDescriptions>

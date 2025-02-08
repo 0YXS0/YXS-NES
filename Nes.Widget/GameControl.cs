@@ -49,12 +49,15 @@ internal class GameControl
 
     public GameControl( )
     {
+        // 检查默认NES文件夹是否存在
+        if(!Directory.Exists(DefaultNesFilePath))
+            Directory.CreateDirectory(DefaultNesFilePath);
+
         m_waveOut = new WaveOut
         {
-            DesiredLatency = 100,
+            DesiredLatency = 50,
         };
         m_waveOut.Init(m_apuAudioProvider);
-
         float[] outputBuffer = new float[128];
         int writeIndex = 0;
         m_emulator.Apu.WriteSample = (sampleValue) =>
@@ -65,7 +68,7 @@ internal class GameControl
                 m_apuAudioProvider.Queue(outputBuffer);
         };
 
-        m_gameThread = new Thread(( ) => { });
+        m_gameThread = new Thread(( ) => { Thread.Sleep(1000); });
         m_emulator.DrawFrame += Emulator_DrawFrame; // 画帧事件
         SelectedColorPalette = ColorPalette.GetColorPaletteByName("Default");   // 选择默认颜色调色板
     }
@@ -186,16 +189,22 @@ internal class GameControl
     }
 }
 
-public class WriteLine : WaveProvider32
+internal class WriteLine : WaveProvider32
 {
+    private readonly float[] cyclicBuffer = [];
+    private int readIndex;
+    private int writeIndex;
+    private int size;
+    private readonly object queueLock = new( );
+
+    public bool Enabled { get; set; }
+
     public WriteLine( )
     {
         cyclicBuffer = new float[4096];
         readIndex = writeIndex = 0;
         Enabled = true;
     }
-
-    public bool Enabled { get; set; }
 
     public override int Read(float[] buffer, int offset, int sampleCount)
     {
@@ -235,11 +244,5 @@ public class WriteLine : WaveProvider32
             }
         }
     }
-
-    private readonly float[] cyclicBuffer = new float[8192];
-    private int readIndex;
-    private int writeIndex;
-    private int size;
-    private readonly object queueLock = new object( );
 }
 

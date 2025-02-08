@@ -107,24 +107,25 @@ public class Emulator
 
     #region Public Constructors
 
-    public Emulator( ) : this(e => new Cpu(e), e => new Bus(e), e => new Ppu(e), ( ) => new Controller( ))
+    public Emulator( ) : this(e => new Cpu(e), e => new Bus(e), e => new Ppu(e), ( ) => new Controller( ), ( ) => new Apu( ))
     {
     }
 
     public Emulator(Func<Emulator, Cpu> cpuResolver, Func<Emulator, Bus> busResolver)
-        : this(cpuResolver, busResolver, e => new Ppu(e), ( ) => new Controller( ))
+        : this(cpuResolver, busResolver, e => new Ppu(e), ( ) => new Controller( ), ( ) => new Apu( ))
     {
     }
 
     public Emulator(Func<Emulator, Cpu> cpuResolver,
         Func<Emulator, Bus> busResolver,
         Func<Emulator, Ppu> ppuResolver,
-        Func<Controller> controllerResolver)
+        Func<Controller> controllerResolver,
+        Func<Apu> apuResolver)
     {
         _cpu = new Lazy<Cpu>(( ) => cpuResolver(this));
         _bus = new Lazy<Bus>(( ) => busResolver(this));
         _ppu = new Lazy<Ppu>(( ) => ppuResolver(this));
-        _apu = new Lazy<Apu>(( ) => new Apu( ));
+        _apu = new Lazy<Apu>(apuResolver);
         _controller = new Lazy<Controller>(controllerResolver);
 
         Cpu.Stepped += OnCpuStepped;

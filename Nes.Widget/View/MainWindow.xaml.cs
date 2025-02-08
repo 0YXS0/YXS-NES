@@ -47,7 +47,7 @@ public partial class MainWindow : Window
         this.Topmost = true;
 #endif
 
-        m_SelectNesFileWindowVM.GameStartEvent += (object? sender, NesFileInfo info) =>
+        m_SelectNesFileWindowVM.SelectedNesFileEvent += (object? sender, NesFileInfo info) =>
         {
             if(!info.IsSupported)
             {
@@ -68,13 +68,13 @@ public partial class MainWindow : Window
             m_SelectNesFileWindow.Hide( );  // 隐藏选择文件窗口
         };
 
-        m_MainWindowVM.GameOpenEvent += async (object? sender, EventArgs e) =>
+        m_MainWindowVM.GameOpenButtonClickedEvent += async (object? sender, EventArgs e) =>
         {
-            m_SelectNesFileWindowVM.SelectnesFile(GameControl.DefaultNesFilePath);
+            await m_SelectNesFileWindowVM.SelectnesFile(GameControl.DefaultNesFilePath);
             await m_SelectNesFileWindow.ShowAsync( );
         };
 
-        m_MainWindowVM.GamePauseEvent += (object? sender, EventArgs e) =>
+        m_MainWindowVM.GamePauseButtonClickedEvent += (object? sender, EventArgs e) =>
         {
             if(m_GameControl.IsGameRunning)
             {
@@ -85,7 +85,7 @@ public partial class MainWindow : Window
             }
         };
 
-        m_MainWindowVM.GameSettingEvent += async (object? sender, EventArgs e) =>
+        m_MainWindowVM.SettingButtonClickedEvent += async (object? sender, EventArgs e) =>
         {
             var res = await m_SettingWindow.ShowAsync( );
             if(res == ContentDialogResult.Primary)
@@ -173,6 +173,9 @@ public partial class MainWindow : Window
             m_GameControl.SetButtonState(Px, Controller.Buttons.Select, state);
     }
 
+    /// <summary>
+    /// 显示出一帧画面
+    /// </summary>
     private void DrawFrame(object? sender, EventArgs e)
     {
         Dispatcher.BeginInvoke(( ) =>
