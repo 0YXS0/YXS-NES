@@ -46,7 +46,6 @@ internal partial class SelectNesFileWindowVM : ObservableObject
             }
         }
     }
-
 }
 
 

@@ -8,6 +8,7 @@ namespace NesEmu.Control;
 
 internal class GameControl
 {
+    public const string DefaultNesFilePath = "D:\\YXS\\C#_Project\\SimpleFC\\NesFile";
     /// <summary>
     /// 游戏打开事件
     /// </summary>

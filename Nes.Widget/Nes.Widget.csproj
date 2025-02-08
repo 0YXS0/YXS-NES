@@ -14,10 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\MainImage.jpg" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Resources\icon.ico" />
   </ItemGroup>
 
@@ -32,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\MainImage.jpg">
+    <Resource Include="Resources\Background.jpg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

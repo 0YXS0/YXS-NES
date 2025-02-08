@@ -1,77 +1,94 @@
-﻿<Window x:Class="Nes.Widget.View.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Nes.Widget"
-        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-        xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern" 
-        ui:WindowHelper.UseModernWindowStyle="True"
-        ui:WindowHelper.SystemBackdropType="Mica"
-        xmlns:Viewmodels="clr-namespace:Nes.Widget.ViewModels"
-        d:DataContext="{d:DesignInstance Type=Viewmodels:MainWindowVM}"
-        mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen"
-        Title="{Binding Title}" Height="480" Width="512">
+﻿<Window
+    x:Class="Nes.Widget.View.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Viewmodels="clr-namespace:Nes.Widget.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:local="clr-namespace:Nes.Widget"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
+    Title="{Binding Title}"
+    Width="512"
+    Height="480"
+    d:DataContext="{d:DesignInstance Type=Viewmodels:MainWindowVM}"
+    ui:WindowHelper.SystemBackdropType="Mica"
+    ui:WindowHelper.UseModernWindowStyle="True"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid Grid.Row="0" Grid.Column="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.Resources>
                 <Style TargetType="ui:AppBarButton">
-                    <Setter Property="Height" Value="60"/>
-                    <Setter Property="Width" Value="40"/>
-                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Height" Value="60" />
+                    <Setter Property="Width" Value="40" />
+                    <Setter Property="Focusable" Value="False" />
                 </Style>
                 <Style TargetType="ui:AppBarToggleButton">
-                    <Setter Property="Height" Value="60"/>
-                    <Setter Property="Width" Value="40"/>
-                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Height" Value="60" />
+                    <Setter Property="Width" Value="40" />
+                    <Setter Property="Focusable" Value="False" />
                 </Style>
             </Grid.Resources>
-            <StackPanel Grid.Row="0" Grid.Column="0" Width="40">
-                <ui:AppBarButton Label="打开" Command="{Binding OpenFileCommand}">
+            <StackPanel
+                Grid.Row="0"
+                Grid.Column="0"
+                Width="40">
+                <ui:AppBarButton Command="{Binding OpenFileCommand}" Label="打开">
                     <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Game}" FontSize="20"/>
+                        <ui:FontIcon FontSize="20" Icon="{x:Static ui:SegoeFluentIcons.Game}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarToggleButton 
-                    Label="暂停" 
+                <ui:AppBarToggleButton
+                    Command="{Binding PauseGameCommand}"
                     IsChecked="{Binding IsPauseBtnClicked, Mode=OneWayToSource}"
-                    Command="{Binding PauseGameCommand}">
+                    Label="暂停">
                     <ui:AppBarToggleButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Pause}"/>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Pause}" />
                     </ui:AppBarToggleButton.Icon>
                 </ui:AppBarToggleButton>
                 <ui:AppBarButton Label="存档">
                     <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Save}"/>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Save}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
                 <ui:AppBarButton Label="读档">
                     <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Download}"/>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Download}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
                 <ui:AppBarToggleButton Label="联机">
                     <ui:AppBarToggleButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.InternetSharing}"/>
+                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.InternetSharing}" />
                     </ui:AppBarToggleButton.Icon>
                 </ui:AppBarToggleButton>
             </StackPanel>
-            <ui:AppBarButton Grid.Column="0" Grid.Row="1" Label="设置" Command="{Binding SettingCommand}">
+            <ui:AppBarButton
+                Grid.Row="1"
+                Grid.Column="0"
+                Command="{Binding SettingCommand}"
+                Label="设置">
                 <ui:AppBarButton.Icon>
-                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}"/>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" />
                 </ui:AppBarButton.Icon>
             </ui:AppBarButton>
         </Grid>
-        <Image x:Name="MainImage" Grid.Row="0" Grid.Column="1" Margin="0,0,3,3"
-               Source="{Binding BitImage}"/>
+        <Border
+            Grid.Row="0"
+            Grid.Column="1"
+            Margin="0,0,3,3">
+            <Border.Background>
+                <ImageBrush ImageSource="pack://application:,,,/Resources/Background.jpg" Stretch="UniformToFill" />
+            </Border.Background>
+            <Image x:Name="MainImage" Source="{Binding BitImage}" />
+        </Border>
     </Grid>
 </Window>

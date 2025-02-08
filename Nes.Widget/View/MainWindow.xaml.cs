@@ -68,10 +68,10 @@ public partial class MainWindow : Window
             m_SelectNesFileWindow.Hide( );  // 隐藏选择文件窗口
         };
 
-        m_MainWindowVM.GameOpenEvent += (object? sender, EventArgs e) =>
+        m_MainWindowVM.GameOpenEvent += async (object? sender, EventArgs e) =>
         {
-            m_SelectNesFileWindowVM.SelectnesFile("D:\\YXS\\C#_Project\\SimpleFC\\NesFile");
-            m_SelectNesFileWindow.ShowAsync( );
+            m_SelectNesFileWindowVM.SelectnesFile(GameControl.DefaultNesFilePath);
+            await m_SelectNesFileWindow.ShowAsync( );
         };
 
         m_MainWindowVM.GamePauseEvent += (object? sender, EventArgs e) =>
