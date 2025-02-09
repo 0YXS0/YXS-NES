@@ -11,7 +11,12 @@
     <Authors>YXS葉</Authors>
     <Product>YXS-NES</Product>
     <AssemblyName>YXS-NES</AssemblyName>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\SaveFileImage.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Resources\icon.ico" />
@@ -31,6 +36,7 @@
     <Resource Include="Resources\Background.jpg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Resources\SaveFileImage.png" />
   </ItemGroup>
 
 </Project>

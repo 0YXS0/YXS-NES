@@ -25,6 +25,8 @@ public partial class MainWindow : Window
     private readonly SettingWindowVM m_SettingWindowVM;
     private readonly SelectNesFileWindow m_SelectNesFileWindow = new( );
     private readonly SelectNesFileWindowVM m_SelectNesFileWindowVM;
+    private readonly SelectSaveFileWindow m_SelectSaveFileWindow = new( );
+    private readonly SelectSaveFileWindowVM m_SelectSaveFileWindowVM;
     private static readonly JsonSerializerOptions JsonSerializerOptions = new( )
     {
         WriteIndented = true,   // 缩进
@@ -37,17 +39,19 @@ public partial class MainWindow : Window
         DataContext = m_MainWindowVM;
         m_SettingWindowVM = (SettingWindowVM)m_SettingWindow.DataContext;
         m_SelectNesFileWindowVM = (SelectNesFileWindowVM)m_SelectNesFileWindow.DataContext;
+        m_SelectSaveFileWindowVM = (SelectSaveFileWindowVM)m_SelectSaveFileWindow.DataContext;
         this.KeyDown += KeyDownHandle;
         this.KeyUp += KeyUphandle;
         this.MouseDown += MouseDownHandle;
         this.MouseUp += MouseUpHandle;
         m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
+        m_SelectSaveFileWindowVM.SelectedSaveFileEvent += GameSave;
 
 #if DEBUG   // 调试时让窗口始终在最上层, 方便调试
         //this.Topmost = true;
 #endif
 
-        m_SelectNesFileWindowVM.SelectedNesFileEvent += (object? sender, NesFileInfo info) =>
+        m_SelectNesFileWindowVM.SelectedNesFileEvent += (object? _, NesFileInfo info) =>
         {
             if(!info.IsSupported)
             {
@@ -69,13 +73,13 @@ public partial class MainWindow : Window
             m_SelectNesFileWindow.Hide( );  // 隐藏选择文件窗口
         };
 
-        m_MainWindowVM.GameOpenButtonClickedEvent += async (object? sender, EventArgs e) =>
+        m_MainWindowVM.GameOpenButtonClickedEvent += async (_, _) =>
         {
             await m_SelectNesFileWindowVM.SelectnesFile(GameControl.DefaultNesFilePath);
             await m_SelectNesFileWindow.ShowAsync( );
         };
 
-        m_MainWindowVM.GamePauseButtonClickedEvent += (object? sender, EventArgs e) =>
+        m_MainWindowVM.GamePauseButtonClickedEvent += (_, _) =>
         {
             if(m_GameControl.IsGameRunning)
             {
@@ -86,7 +90,7 @@ public partial class MainWindow : Window
             }
         };
 
-        m_MainWindowVM.SettingButtonClickedEvent += async (object? sender, EventArgs e) =>
+        m_MainWindowVM.SettingButtonClickedEvent += async (_, _) =>
         {
             var res = await m_SettingWindow.ShowAsync( );
             if(res == ContentDialogResult.Primary)
@@ -111,8 +115,24 @@ public partial class MainWindow : Window
             }
         };
 
-        m_MainWindowVM.GameSaveButtonClickedEvent += GameSave;
-        m_MainWindowVM.GameLoadButtonClickedEvent += GameLoad;
+        m_MainWindowVM.GameSaveButtonClickedEvent += async (_, _) =>
+        {
+            m_SelectSaveFileWindowVM.Title = "保存游戏";
+            if(m_GameControl.IsGameRunning && m_GameControl.NesFileInfo is not null)
+                m_SelectSaveFileWindowVM.GameName = m_GameControl.NesFileInfo.Name;
+            else
+                m_SelectSaveFileWindowVM.GameName = "无运行游戏";
+            await m_SelectSaveFileWindow.ShowAsync( );
+        };
+        m_MainWindowVM.GameLoadButtonClickedEvent += async (_, _) =>
+        {
+            m_SelectSaveFileWindowVM.Title = "加载游戏";
+            if(m_GameControl.IsGameRunning && m_GameControl.NesFileInfo is not null)
+                m_SelectSaveFileWindowVM.GameName = m_GameControl.NesFileInfo.Name;
+            else
+                m_SelectSaveFileWindowVM.GameName = "无运行游戏";
+            await m_SelectSaveFileWindow.ShowAsync( );
+        };
 
         // 从文件中加载设置
         if(File.Exists("setting.json"))
@@ -129,18 +149,74 @@ public partial class MainWindow : Window
         }
     }
 
+    private void GameSave(object? sender, int index)
+    {
+        // 如果游戏没有运行, 则不保存
+        if(!m_GameControl.IsGameRunning) goto end;
+        if(m_GameControl.NesFileInfo is null) goto end;
+        var time = DateTime.Now;
+
+        // 检查存档文件夹是否存在
+        if(!Path.Exists(GameControl.DefaultSaveFilePath))
+            Directory.CreateDirectory(GameControl.DefaultSaveFilePath);
+        var gamePath = GameControl.DefaultSaveFilePath + @"\" + m_GameControl.NesFileInfo.Name;
+        // 检查当前游戏的存档文件夹是否存在
+        if(!Directory.Exists(gamePath))
+            Directory.CreateDirectory(gamePath);
+        // 检查当前游戏的存档文件夹下的当前序号的存档文件夹是否存在
+        var saveFilePath = gamePath + @"\" + $"{m_GameControl.NesFileInfo.Name}_{index}";
+        if(!Path.Exists(saveFilePath))
+            Directory.CreateDirectory(saveFilePath);
+
+        var fileInfoName = m_GameControl.NesFileInfo.Name + ".info";    // 存档信息文件名
+        var fileName = m_GameControl.NesFileInfo.Name + ".save";    // 存档文件名
+        var frontCoverName = m_GameControl.NesFileInfo.Name + ".png";   // 封面图片名
+
+        /// 保存封面图片
+        using(FileStream fileStream = new(saveFilePath + @"\" + frontCoverName, FileMode.Create))
+        {
+            PngBitmapEncoder encoder = new( );
+            encoder.Frames.Add(BitmapFrame.Create(m_MainWindowVM.BitImage));    // 将WriteableBitmap转换为BitmapFrame
+            encoder.Save(fileStream);   // 将编码后的数据写入文件
+        }
+
+        /// 保存存档
+        using(BinaryWriter fileWriter = new(File.Open(saveFilePath + @"\" + fileName, FileMode.Create)))
+        {
+            m_GameControl.Save(fileWriter);
+        }
+
+        /// 保存存档信息
+        SaveFileInfo info = new( )
+        {
+            GameName = m_GameControl.NesFileInfo.Name,
+            NesFilePath = m_GameControl.NesFileInfo.Path,
+            Path = saveFilePath + @"\" + fileName,
+            FrontCoverPath = saveFilePath + @"\" + frontCoverName,
+            Date = time,
+        };
+        BitmapImage bitmapImage = new( );   // 创建一个BitmapImage对象
+        bitmapImage.BeginInit( );
+        bitmapImage.CacheOption = BitmapCacheOption.OnLoad; // 确保图像数据在加载后缓存到内存中
+        bitmapImage.UriSource = new Uri(AppDomain.CurrentDomain.BaseDirectory + info.FrontCoverPath, UriKind.Absolute);
+        bitmapImage.CreateOptions = BitmapCreateOptions.IgnoreImageCache; // 忽略图片缓存
+        bitmapImage.EndInit( );
+        info.FrontCover = bitmapImage;
+
+        using(var infoWriter = new BinaryWriter(File.Open(saveFilePath + @"\" + fileInfoName, FileMode.Create)))
+        {
+            info.Save(infoWriter);
+        }
+        m_SelectSaveFileWindowVM.SaveInfos[index] = info;
+    end:
+        m_SelectSaveFileWindow.Hide( );
+    }
+
     private void GameLoad(object? sender, EventArgs e)
     {
         var fileName = m_GameControl.NesFileInfo?.Name + ".save";
         using BinaryReader reader = new(File.Open(fileName, FileMode.Open));
         m_GameControl.Load(reader);
-    }
-
-    private void GameSave(object? sender, EventArgs e)
-    {
-        var fileName = m_GameControl.NesFileInfo?.Name + ".save";
-        using BinaryWriter writer = new(File.Open(fileName, FileMode.Create));
-        m_GameControl.Save(writer);
     }
 
     private void MouseUpHandle(object sender, MouseButtonEventArgs e)

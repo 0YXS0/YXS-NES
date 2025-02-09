@@ -10,6 +10,7 @@ namespace Nes.Widget.Control;
 internal class GameControl
 {
     public const string DefaultNesFilePath = "D:\\YXS\\C#_Project\\SimpleFC\\NesFile";
+    public const string DefaultSaveFilePath = "SaveFile";
     /// <summary>
     /// 游戏打开事件
     /// </summary>

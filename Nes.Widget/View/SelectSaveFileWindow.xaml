@@ -1,0 +1,62 @@
+﻿<ui:ContentDialog
+    x:Class="Nes.Widget.View.SelectSaveFileWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Models="clr-namespace:Nes.Widget.Models"
+    xmlns:Viewmodels="clr-namespace:Nes.Widget.ViewModels"
+    xmlns:componentmodel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:ikw="http://schemas.inkore.net/lib/ui/wpf"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
+    Title="{Binding Title}"
+    d:DataContext="{d:DesignInstance Type=Viewmodels:SelectSaveFileWindowVM}"
+    d:DesignHeight="480"
+    d:DesignWidth="512"
+    mc:Ignorable="d">
+    <ui:ContentDialog.Resources>
+        <DataTemplate x:Key="ItemTemplate">
+            <Border Width="130" Height="130">
+                <Border.Background>
+                    <ImageBrush ImageSource="pack://application:,,,/Resources/SaveFileImage.png" />
+                </Border.Background>
+                <Grid>
+                    <Image
+                        Margin="18"
+                        Source="{Binding FrontCover, Mode=OneWay}"
+                        Stretch="UniformToFill" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Text="{Binding DateStr}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </ui:ContentDialog.Resources>
+    <Grid Width="430">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="280" />
+        </Grid.RowDefinitions>
+        <TextBlock
+            Grid.Row="0"
+            Margin="0,0,0,5"
+            HorizontalAlignment="Center"
+            FontSize="16"
+            Text="{Binding GameName}" />
+        <ui:GridView
+            x:Name="gridView"
+            Grid.Row="1"
+            Margin="0,0,0,0"
+            HorizontalAlignment="Center"
+            AllowDrop="True"
+            FlowDirection="LeftToRight"
+            IsItemClickEnabled="True"
+            IsMultiSelectCheckBoxEnabled="False"
+            ItemClick="GridView_ItemClick"
+            ItemTemplate="{StaticResource ItemTemplate}"
+            ItemsSource="{Binding SaveInfos}"
+            SelectionMode="Single" />
+    </Grid>
+</ui:ContentDialog>
