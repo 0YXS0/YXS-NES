@@ -8,6 +8,8 @@
 // MIT License
 // ============================================================================
 
+using System.IO;
+
 namespace Nes.Core;
 
 /// <summary>
@@ -88,6 +90,34 @@ internal struct PpuMaskRegister
         EmphasizeRed = (byte)((value >> 5) & 1);
         EmphasizeGreen = (byte)((value >> 6) & 1);
         EmphasizeBlue = (byte)((value >> 7) & 1);
+    }
+
+    public readonly void Save(BinaryWriter writer)
+    {
+        writer.Write(EmphasizeBlue);
+        writer.Write(EmphasizeGreen);
+        writer.Write(EmphasizeRed);
+        writer.Write(IsGreyScale);
+        writer.Write(ShowBackground);
+        writer.Write(ShowSprites);
+        writer.Write(ShowBackgroundInLeftmost8PixelsOfScreen);
+        writer.Write(ShowSprites);
+        writer.Write(ShowSpritesInLeftmost8PixelsOfScreen);
+        writer.Write(Value);
+    }
+
+    public void Load(BinaryReader reader)
+    {
+        EmphasizeBlue = reader.ReadByte( );
+        EmphasizeGreen = reader.ReadByte( );
+        EmphasizeRed = reader.ReadByte( );
+        IsGreyScale = reader.ReadByte( );
+        ShowBackground = reader.ReadByte( );
+        ShowSprites = reader.ReadByte( );
+        ShowBackgroundInLeftmost8PixelsOfScreen = reader.ReadByte( );
+        ShowSprites = reader.ReadByte( );
+        ShowSpritesInLeftmost8PixelsOfScreen = reader.ReadByte( );
+        Value = reader.ReadByte( );
     }
 
     #endregion Public Methods

@@ -44,7 +44,7 @@ public partial class MainWindow : Window
         m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
 
 #if DEBUG   // 调试时让窗口始终在最上层, 方便调试
-        this.Topmost = true;
+        //this.Topmost = true;
 #endif
 
         m_SelectNesFileWindowVM.SelectedNesFileEvent += (object? sender, NesFileInfo info) =>
@@ -111,6 +111,9 @@ public partial class MainWindow : Window
             }
         };
 
+        m_MainWindowVM.GameSaveButtonClickedEvent += GameSave;
+        m_MainWindowVM.GameLoadButtonClickedEvent += GameLoad;
+
         // 从文件中加载设置
         if(File.Exists("setting.json"))
         {
@@ -124,6 +127,20 @@ public partial class MainWindow : Window
                 Console.WriteLine("读取setting.json设置文件失败。");
             }
         }
+    }
+
+    private void GameLoad(object? sender, EventArgs e)
+    {
+        var fileName = m_GameControl.NesFileInfo?.Name + ".save";
+        using BinaryReader reader = new(File.Open(fileName, FileMode.Open));
+        m_GameControl.Load(reader);
+    }
+
+    private void GameSave(object? sender, EventArgs e)
+    {
+        var fileName = m_GameControl.NesFileInfo?.Name + ".save";
+        using BinaryWriter writer = new(File.Open(fileName, FileMode.Create));
+        m_GameControl.Save(writer);
     }
 
     private void MouseUpHandle(object sender, MouseButtonEventArgs e)

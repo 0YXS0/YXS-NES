@@ -32,7 +32,7 @@ namespace Nes.Core
             Cpu = cpu;
             A = cpu.A;
             Flags = cpu.Flag;
-            AddressingMode = cpu.GetInstructionAddressingMode(instruction[0]);
+            AddressingMode = Cpu.GetInstructionAddressingMode(instruction[0]);
             Instruction = instruction;
             OpcodeName = cpu.GetInstructionName(instruction[0]);
             PC = cpu.PC;

@@ -9,6 +9,7 @@
 // ============================================================================
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -44,12 +45,10 @@ public class Cpu
 
     #region Private Fields
 
-    private readonly Emulator _emulator;    // NES仿真器
-
     /// <summary>
     /// 操作码的寻址模式映射表
     /// </summary>
-    private readonly byte[] _addressingModes =
+    private static readonly byte[] _addressingModes =
     [
         0, 11, 0, 11, 3, 3, 3, 3, 0, 2, 1, 2, 7, 7, 7, 7,
         6, 12, 0, 12, 4, 4, 4, 4, 0, 9, 0, 9, 8, 8, 8, 8,
@@ -72,7 +71,7 @@ public class Cpu
     /// <summary>
     /// 操作码的执行所需的CPU周期数映射表
     /// </summary>
-    private readonly byte[] _instructionCycles =
+    private static readonly byte[] _instructionCycles =
     [
         7, 6, 0, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
         2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
@@ -95,7 +94,7 @@ public class Cpu
     /// <summary>
     /// 当操作码执行跨页时，额外需要的CPU周期数映射表
     /// </summary>
-    private readonly byte[] _instructionPageCycles =
+    private static readonly byte[] _instructionPageCycles =
     [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
@@ -118,7 +117,7 @@ public class Cpu
     /// <summary>
     /// 操作码及其操作数的字节数映射表
     /// </summary>
-    private readonly byte[] _instructionSizes =
+    private static readonly byte[] _instructionSizes =
     [
         1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,
         2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
@@ -138,7 +137,7 @@ public class Cpu
         2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3
     ];
 
-    private readonly Opcode[] _opcodes;
+    private readonly Opcode[] _opcodes; // 操作码表--汇编指令表
 
     private int _idleCycles;    // 空闲周期数
 
@@ -158,7 +157,6 @@ public class Cpu
 
     public Cpu(Emulator emulator)
     {
-        _emulator = emulator;
         _bus = emulator.Bus;
         _opcodes =
         [
@@ -270,7 +268,7 @@ public class Cpu
     /// </summary>
     /// <param name="opcode">操作码</param>
     /// <returns></returns>
-    public AddressingMode GetInstructionAddressingMode(byte opcode)
+    public static AddressingMode GetInstructionAddressingMode(byte opcode)
     {
         return (AddressingMode)_addressingModes[opcode];
     }
@@ -290,7 +288,7 @@ public class Cpu
     /// </summary>
     /// <param name="opcode">操作码</param>
     /// <returns>字节数</returns>
-    public int GetInstructionSize(byte opcode)
+    public static int GetInstructionSize(byte opcode)
     {
         return _instructionSizes[opcode];
     }
@@ -308,6 +306,7 @@ public class Cpu
         Cycles = 0;
         _idleCycles = 0;
         _nmiInterruptTriggered = false;
+        _irqInterruptTriggered = false;
     }
 
     /// <summary>
@@ -378,6 +377,40 @@ public class Cpu
         _irqInterruptTriggered = true;
     }
 
+    /// <summary>
+    /// 存档
+    /// </summary>
+    public void Save(BinaryWriter writer)
+    {
+        writer.Write(_a);
+        writer.Write(_flag.Value);
+        writer.Write(_pc);
+        writer.Write(_sp);
+        writer.Write(_x);
+        writer.Write(_y);
+        writer.Write(Cycles);
+        writer.Write(_idleCycles);
+        writer.Write(_nmiInterruptTriggered);
+        writer.Write(_irqInterruptTriggered);
+    }
+
+    /// <summary>
+    /// 读档
+    /// </summary>
+    public void Load(BinaryReader reader)
+    {
+        _a = reader.ReadByte( );
+        _flag = new CpuFlags(reader.ReadByte( ));
+        _pc = reader.ReadUInt16( );
+        _sp = reader.ReadByte( );
+        _x = reader.ReadByte( );
+        _y = reader.ReadByte( );
+        Cycles = reader.ReadInt64( );
+        _idleCycles = reader.ReadInt32( );
+        _nmiInterruptTriggered = reader.ReadBoolean( );
+        _irqInterruptTriggered = reader.ReadBoolean( );
+    }
+
     #endregion Public Methods
 
     #region Internal Methods
@@ -393,7 +426,7 @@ public class Cpu
 
     #endregion Internal Methods
 
-    #region Private Methods
+    #region Private Methods // 私有方法
 
     /// <summary>
     /// 判断新旧地址是否跨页
@@ -404,6 +437,8 @@ public class Cpu
     {
         return (addressA & 0xff) != (addressB & 0xff);
     }
+
+    #region Opcode Implementations  // 操作码实现
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void _adc(AddressingMode mode, ushort address)
@@ -990,6 +1025,8 @@ public class Cpu
         _a = (byte)((_a | 0xee) & _x & v);
         SetZeroAndNegativeFlags(_a);
     }
+
+    #endregion Opcode Implementations   
 
     private void Branch(ushort address)
     {

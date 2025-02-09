@@ -277,32 +277,32 @@ public class Apu
         }
     }
 
-    public void SaveState(BinaryWriter binaryWriter)
+    public void Save(BinaryWriter writer)
     {
-        binaryWriter.Write(cycle);
-        binaryWriter.Write(framePeriod);
-        binaryWriter.Write(frameValue);
-        binaryWriter.Write(frameIrq);
+        writer.Write(cycle);
+        writer.Write(framePeriod);
+        writer.Write(frameValue);
+        writer.Write(frameIrq);
 
-        Pulse1.SaveState(binaryWriter);
-        Pulse2.SaveState(binaryWriter);
-        Triangle.SaveState(binaryWriter);
-        Noise.SaveState(binaryWriter);
-        Dmc.SaveState(binaryWriter);
+        Pulse1.SaveState(writer);
+        Pulse2.SaveState(writer);
+        Triangle.SaveState(writer);
+        Noise.SaveState(writer);
+        Dmc.SaveState(writer);
     }
 
-    public void LoadState(BinaryReader binaryReader)
+    public void Load(BinaryReader reader)
     {
-        cycle = binaryReader.ReadUInt64( );
-        framePeriod = binaryReader.ReadByte( );
-        frameValue = binaryReader.ReadByte( );
-        frameIrq = binaryReader.ReadBoolean( );
+        cycle = reader.ReadUInt64( );
+        framePeriod = reader.ReadByte( );
+        frameValue = reader.ReadByte( );
+        frameIrq = reader.ReadBoolean( );
 
-        Pulse1.LoadState(binaryReader);
-        Pulse2.LoadState(binaryReader);
-        Triangle.LoadState(binaryReader);
-        Noise.LoadState(binaryReader);
-        Dmc.LoadState(binaryReader);
+        Pulse1.LoadState(reader);
+        Pulse2.LoadState(reader);
+        Triangle.LoadState(reader);
+        Noise.LoadState(reader);
+        Dmc.LoadState(reader);
     }
 
     private void StepTimer( )

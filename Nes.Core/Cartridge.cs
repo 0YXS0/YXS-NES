@@ -156,5 +156,21 @@ public class Cartridge
         ChrData[address] = data;
     }
 
+    /// <summary>
+    /// 存档
+    /// </summary>
+    public void Save(BinaryWriter writer)
+    {
+        writer.Write(ChrData);
+    }
+
+    /// <summary>
+    /// 读档
+    /// </summary>
+    public void Load(BinaryReader reader)
+    {
+        reader.Read(ChrData);
+    }
+
     #endregion Public Methods
 }

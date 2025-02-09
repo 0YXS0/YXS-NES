@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace Nes.Core;
@@ -61,14 +62,14 @@ public class Ppu(Emulator emulator)
         0x3f1d
     ];
 
-    // storing the display data for the current frame on the screen.
+    // 将当前帧的显示数据存储在屏幕上。
     private readonly byte[] _bmp = new byte[256 * 240];
 
     private readonly byte[] _oam = new byte[OamDataSize];
 
     private readonly byte[] _paletteTable = new byte[PlateTableSize];
 
-    private readonly int[] _spriteIndicies = new int[8];
+    private readonly byte[] _spriteIndicies = new byte[8];
 
     private readonly byte[] _sprites = new byte[32];
 
@@ -136,7 +137,8 @@ public class Ppu(Emulator emulator)
 
     public void Reset( )
     {
-        if(emulator.InstalledCartridge is null) throw new InvalidOperationException("Cartridge is not installed.");
+        if(emulator.InstalledCartridge is null)
+            throw new InvalidOperationException("Cartridge is not installed.");
 
         _mirroring = emulator.InstalledCartridge.Mirroring;
 
@@ -321,6 +323,62 @@ public class Ppu(Emulator emulator)
         }
     }
 
+    public void Save(BinaryWriter writer)
+    {
+        writer.Write(_bmp);
+        writer.Write(_oam);
+        writer.Write(_paletteTable);
+        writer.Write(_spriteIndicies);
+        writer.Write(_sprites);
+        writer.Write(_vram);
+        writer.Write(_attributeTableByte);
+        writer.Write(_cycles);
+        writer.Write(_f);
+        writer.Write(_internalDataBuffer);
+        writer.Write((int)_mirroring);
+        writer.Write(_nameTableByte);
+        writer.Write(_numSprites);
+        writer.Write(_oamAddress);
+        _ppuAddress.Save(writer);
+        _ppuCtrl.Save(writer);
+        _ppuMask.Save(writer);
+        _ppuScroll.Save(writer);
+        _ppuStatus.Save(writer);
+        writer.Write(_t);
+        writer.Write(_tileBitfieldHi);
+        writer.Write(_tileBitfieldLo);
+        writer.Write(_tileShiftRegister);
+        writer.Write(_w);
+    }
+
+    public void Load(BinaryReader reader)
+    {
+        reader.Read(_bmp);
+        reader.Read(_oam);
+        reader.Read(_paletteTable);
+        reader.Read(_spriteIndicies);
+        reader.Read(_sprites);
+        reader.Read(_vram);
+        _attributeTableByte = reader.ReadByte( );
+        _cycles = reader.ReadInt32( );
+        _f = reader.ReadByte( );
+        _internalDataBuffer = reader.ReadByte( );
+        _mirroring = (VramMirroring)reader.ReadInt32( );
+        _nameTableByte = reader.ReadByte( );
+        _numSprites = reader.ReadInt32( );
+        _oamAddress = reader.ReadByte( );
+        _ppuAddress.Load(reader);
+        _ppuCtrl.Load(reader);
+        _ppuMask.Load(reader);
+        _ppuScroll.Load(reader);
+        _ppuStatus.Load(reader);
+        _t = reader.ReadUInt16( );
+        _tileBitfieldHi = reader.ReadByte( );
+        _tileBitfieldLo = reader.ReadByte( );
+        _tileShiftRegister = reader.ReadUInt64( );
+        _w = reader.ReadByte( );
+    }
+
     #endregion Public Methods
 
     #region Private Methods
@@ -363,7 +421,7 @@ public class Ppu(Emulator emulator)
             }
 
             Array.Copy(_oam, i, _sprites, _numSprites * 4, 4);
-            _spriteIndicies[_numSprites] = (i - _oamAddress) / 4;
+            _spriteIndicies[_numSprites] = (byte)((i - _oamAddress) / 4);
             _numSprites++;
         }
     }

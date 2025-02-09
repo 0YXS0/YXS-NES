@@ -8,6 +8,8 @@
 // MIT License
 // ============================================================================
 
+using System.IO;
+
 namespace Nes.Core;
 
 /// <summary>
@@ -107,6 +109,30 @@ internal struct PpuControlRegister
         SpritePatternTableAddress = (ushort)((data & 8) == 0 ? 0 : 0x1000);
         SpriteSizeFlag = (data & 32) >> 5;
         VramAddressIncrement = (data & 4) == 0 ? 1 : 32;
+    }
+
+    public readonly void Save(BinaryWriter writer)
+    {
+        writer.Write(BackgroundPatternTableAddress);
+        writer.Write(BaseNametableAddress);
+        writer.Write(GenerateNmiWhenVBlankBegins);
+        writer.Write(PpuMasterSlaveSelectFlag);
+        writer.Write(SpritePatternTableAddress);
+        writer.Write(SpriteSizeFlag);
+        writer.Write(Value);
+        writer.Write(VramAddressIncrement);
+    }
+
+    public void Load(BinaryReader reader)
+    {
+        BackgroundPatternTableAddress = reader.ReadUInt16( );
+        BaseNametableAddress = reader.ReadUInt16( );
+        GenerateNmiWhenVBlankBegins = reader.ReadBoolean( );
+        PpuMasterSlaveSelectFlag = reader.ReadInt32( );
+        SpritePatternTableAddress = reader.ReadUInt16( );
+        SpriteSizeFlag = reader.ReadInt32( );
+        Value = reader.ReadByte( );
+        VramAddressIncrement = reader.ReadInt32( );
     }
 
     #endregion Public Methods

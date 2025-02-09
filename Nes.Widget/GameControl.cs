@@ -40,10 +40,20 @@ internal class GameControl
     /// </summary>
     public byte[] Pixels { get; } = new byte[256 * 240 * 4];
 
+    private string m_SelectedColorPaletteName = "Default";
+    private ColorPalette m_selectedColorPalette;
     /// <summary>
     /// 选择的颜色调色板
     /// </summary>
-    public ColorPalette SelectedColorPalette { get; set; }
+    public ColorPalette SelectedColorPalette
+    {
+        get => m_selectedColorPalette;
+        set
+        {
+            m_selectedColorPalette = value;
+            m_SelectedColorPaletteName = ColorPalette.Palettes.First(p => p.Value == value).Key;
+        }
+    }
 
     private readonly Emulator m_emulator = new( );   // 模拟器
     private Thread m_gameThread;   // 游戏线程
@@ -73,7 +83,7 @@ internal class GameControl
 
         m_gameThread = new Thread(( ) => { Thread.Sleep(1000); });
         m_emulator.DrawFrame += DrawFrameHandle; // 画帧事件
-        SelectedColorPalette = ColorPalette.GetColorPaletteByName("Default");   // 选择默认颜色调色板
+        m_selectedColorPalette = ColorPalette.GetColorPaletteByName(m_SelectedColorPaletteName);   // 选择默认颜色调色板
     }
 
     /// <summary>
@@ -192,6 +202,28 @@ internal class GameControl
             Pixels[i * 4 + 3] = color.A;
         });
         GameDrawFrame?.Invoke(this, EventArgs.Empty); // 触发游戏画帧事件
+    }
+
+    /// <summary>
+    /// 存档
+    /// </summary>
+    public void Save(BinaryWriter writer)
+    {
+        if(NesFileInfo is null) return; // 没有打开的游戏
+
+        //PauseGame( );   // 暂停游戏
+        //while((m_gameThread.ThreadState & ThreadState.WaitSleepJoin) != 0) ; // 等待游戏线程暂停
+        m_emulator.Save(writer);    // 保存游戏
+        //ResumeGame( );  // 恢复游戏
+    }
+
+    /// <summary>
+    /// 读档
+    /// </summary>
+    public void Load(BinaryReader reader)
+    {
+        m_emulator.Load(reader);    // 读档
+        return;
     }
 }
 

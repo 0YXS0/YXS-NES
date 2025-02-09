@@ -8,6 +8,8 @@
 // MIT License
 // ============================================================================
 
+using System.IO;
+
 namespace Nes.Core;
 
 /// <summary>
@@ -71,6 +73,22 @@ internal struct PpuStatusRegister
         SpriteOverflow = 0;
         SpriteZeroHit = 0;
         VBlankStarted = 0;
+    }
+
+    public readonly void Save(BinaryWriter writer)
+    {
+        writer.Write(LastRegisterWrite);
+        writer.Write(SpriteOverflow);
+        writer.Write(SpriteZeroHit);
+        writer.Write(VBlankStarted);
+    }
+
+    public void Load(BinaryReader reader)
+    {
+        LastRegisterWrite = reader.ReadByte( );
+        SpriteOverflow = reader.ReadByte( );
+        SpriteZeroHit = reader.ReadByte( );
+        VBlankStarted = reader.ReadByte( );
     }
 
     #endregion Public Methods

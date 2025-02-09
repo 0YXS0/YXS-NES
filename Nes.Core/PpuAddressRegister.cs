@@ -8,6 +8,8 @@
 // MIT License
 // ============================================================================
 
+using System.IO;
+
 namespace Nes.Core;
 
 /// <summary>
@@ -51,6 +53,10 @@ internal struct PpuAddressRegister
             firstWriteFlag = 0;
         }
     }
+
+    public readonly void Save(BinaryWriter writer) => writer.Write(Value);
+
+    public void Load(BinaryReader reader) => Value = reader.ReadUInt16( );
 
     #endregion Public Methods
 }

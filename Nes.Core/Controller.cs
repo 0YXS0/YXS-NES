@@ -8,6 +8,8 @@
 // MIT License
 // ============================================================================
 
+using System.IO;
+
 namespace Nes.Core;
 
 public sealed class Controller
@@ -32,7 +34,7 @@ public sealed class Controller
 
     private readonly bool[,] _buttonStates = new bool[2, 8];
 
-    private int[] _buttonIndex = new int[2];
+    private readonly byte[] _buttonIndex = new byte[2];
 
     private bool _strobe = true;
 
@@ -66,6 +68,18 @@ public sealed class Controller
             _buttonIndex[0] = 0;
             _buttonIndex[1] = 0;
         }
+    }
+
+    public void Save(BinaryWriter writer)
+    {
+        writer.Write(_strobe);
+        writer.Write(_buttonIndex);
+    }
+
+    public void Load(BinaryReader reader)
+    {
+        _strobe = reader.ReadBoolean( );
+        reader.Read(_buttonIndex);
     }
 
     #endregion Public Methods

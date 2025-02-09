@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -253,10 +254,10 @@ public class Emulator
     /// <summary>
     /// 打开NES游戏文件
     /// </summary>
-    /// <param name="cartridgeFileName">NES文件路径</param>
-    public void Open(string cartridgeFileName)
+    /// <param name="nesFilePath">NES文件路径</param>
+    public void Open(string nesFilePath)
     {
-        InstallCartridge(new Cartridge(cartridgeFileName)); // 安装游戏卡带
+        InstallCartridge(new Cartridge(nesFilePath)); // 安装游戏卡带
         Reset( );   // 重置模拟器
         _stop = false;
     }
@@ -324,6 +325,36 @@ public class Emulator
             IsPaused = false;
             Monitor.Pulse(_lockObject); // 唤醒等待的线程
         }
+    }
+
+    /// <summary>
+    /// 存档
+    /// </summary>
+    public void Save(BinaryWriter writer)
+    {
+        writer.Write(_frameflip);
+        InstalledCartridge?.Save(writer);
+        Controller.Save(writer);
+        Cpu.Save(writer);
+        Bus.Save(writer);
+        Ppu.Save(writer);
+        Apu.Save(writer);
+    }
+
+    /// <summary>
+    /// 读档
+    /// </summary>
+    public void Load(BinaryReader reader)
+    {
+        _frameflip = reader.ReadBoolean( );
+        _stop = false;
+        //IsPaused = true;    // 暂停模拟器
+        InstalledCartridge?.Load(reader);
+        Controller.Load(reader);
+        Cpu.Load(reader);
+        Bus.Load(reader);
+        Ppu.Load(reader);
+        Apu.Load(reader);
     }
 
     #endregion Public Methods

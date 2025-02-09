@@ -1,14 +1,5 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using System;
+﻿using System;
+using System.IO;
 
 namespace Nes.Core;
 
@@ -139,6 +130,22 @@ public class Bus(Emulator emulator)
         var lo = (byte)(value & 0xff);
         WriteByte(address, lo);
         WriteByte((ushort)(address + 1), hi);
+    }
+
+    /// <summary>
+    /// 存档
+    /// </summary>
+    public void Save(BinaryWriter writer)
+    {
+        writer.Write(_ram);
+    }
+
+    /// <summary>
+    /// 读档
+    /// </summary>
+    public void Load(BinaryReader reader)
+    {
+        reader.Read(_ram);
     }
 
     #endregion Public Methods
