@@ -130,7 +130,7 @@ internal class GameControl
     /// </summary>
     public void PauseGame( )
     {
-        m_emulator.Pause( );
+        m_emulator.Pause( );    // 暂停模拟器
         m_waveOut.Pause( ); // 暂停音频
     }
 
@@ -139,7 +139,7 @@ internal class GameControl
     /// </summary>
     public void ResumeGame( )
     {
-        m_emulator.Resume( );
+        m_emulator.Resume( );   // 恢复模拟器
         m_waveOut.Play( );  // 播放音频
     }
 
@@ -212,10 +212,7 @@ internal class GameControl
     {
         if(NesFileInfo is null) return; // 没有打开的游戏
 
-        //PauseGame( );   // 暂停游戏
-        //while((m_gameThread.ThreadState & ThreadState.WaitSleepJoin) != 0) ; // 等待游戏线程暂停
         m_emulator.Save(writer);    // 保存游戏
-        //ResumeGame( );  // 恢复游戏
     }
 
     /// <summary>
@@ -223,8 +220,9 @@ internal class GameControl
     /// </summary>
     public void Load(BinaryReader reader)
     {
+        if(NesFileInfo is null) return; // 没有打开的游戏
+
         m_emulator.Load(reader);    // 读档
-        return;
     }
 }
 

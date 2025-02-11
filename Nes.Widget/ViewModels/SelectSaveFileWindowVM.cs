@@ -10,8 +10,14 @@ internal partial class SelectSaveFileWindowVM : ObservableObject
     /// 已选择存档事件
     /// </summary>
     public event EventHandler<int>? SelectedSaveFileEvent;
+    public event EventHandler<int>? SelectedLoadFileEvent;
 
     public ObservableCollection<SaveFileInfo> SaveInfos { get; } = [];
+
+    /// <summary>
+    /// 当前操作是存档还是读档(用来触发不同的事件)--true:存档 false:读档
+    /// </summary>
+    public bool IsSave { get; set; } = true;
 
     public int SelectedSaveInfoIndex
     {
@@ -19,7 +25,10 @@ internal partial class SelectSaveFileWindowVM : ObservableObject
         set
         {
             field = value;
-            SelectedSaveFileEvent?.Invoke(this, value);
+            if(IsSave)
+                SelectedSaveFileEvent?.Invoke(this, value);
+            else
+                SelectedLoadFileEvent?.Invoke(this, value);
         }
     }
 

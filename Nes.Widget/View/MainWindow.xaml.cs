@@ -45,7 +45,10 @@ public partial class MainWindow : Window
         this.MouseDown += MouseDownHandle;
         this.MouseUp += MouseUpHandle;
         m_GameControl.GameDrawFrame += DrawFrame; // 画帧事件
-        m_SelectSaveFileWindowVM.SelectedSaveFileEvent += GameSave;
+        m_SelectSaveFileWindowVM.SelectedSaveFileEvent += GameSave; // 存档事件
+        m_SelectSaveFileWindowVM.SelectedLoadFileEvent += GameLoad; // 读档事件
+        // 进行存档信息的读取以及信息显示的初始化
+        m_SelectSaveFileWindow.Opened += SelectSaveFileWindow_OpenEventHandle;
 
 #if DEBUG   // 调试时让窗口始终在最上层, 方便调试
         //this.Topmost = true;
@@ -118,15 +121,18 @@ public partial class MainWindow : Window
         m_MainWindowVM.GameSaveButtonClickedEvent += async (_, _) =>
         {
             m_SelectSaveFileWindowVM.Title = "保存游戏";
+            m_SelectSaveFileWindowVM.IsSave = true;
             if(m_GameControl.IsGameRunning && m_GameControl.NesFileInfo is not null)
                 m_SelectSaveFileWindowVM.GameName = m_GameControl.NesFileInfo.Name;
             else
                 m_SelectSaveFileWindowVM.GameName = "无运行游戏";
             await m_SelectSaveFileWindow.ShowAsync( );
         };
+
         m_MainWindowVM.GameLoadButtonClickedEvent += async (_, _) =>
         {
             m_SelectSaveFileWindowVM.Title = "加载游戏";
+            m_SelectSaveFileWindowVM.IsSave = false;
             if(m_GameControl.IsGameRunning && m_GameControl.NesFileInfo is not null)
                 m_SelectSaveFileWindowVM.GameName = m_GameControl.NesFileInfo.Name;
             else
@@ -149,6 +155,44 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SelectSaveFileWindow_OpenEventHandle(ContentDialog sender, ContentDialogOpenedEventArgs args)
+    {
+        // 如果游戏没有运行, 则不读取
+        if(!m_GameControl.IsGameRunning) return;
+        if(m_GameControl.NesFileInfo is null) return;
+
+        // 当前游戏的存档文件夹
+        var gamePath = GameControl.DefaultSaveFilePath + @"\" + m_GameControl.NesFileInfo.Name;
+        var fileInfoName = m_GameControl.NesFileInfo.Name + ".info";    // 存档信息文件名
+
+        for(var index = 0; index < 6; index++)
+        {
+            // 当前序号的存档文件夹
+            var saveFilePath = gamePath + @"\" + $"{m_GameControl.NesFileInfo.Name}_{index}";
+            // 如果当前序号的存档文件夹不存在, 则跳过
+            if(!Directory.Exists(saveFilePath)) continue;
+            if(!File.Exists(saveFilePath + @"\" + fileInfoName)) continue;  // 如果存档信息文件不存在, 则跳过
+
+            /// 存档信息
+            SaveFileInfo info = new( );
+            using BinaryReader infoReader = new(File.Open(saveFilePath + @"\" + fileInfoName, FileMode.Open));
+            info.Load(infoReader);  // 读取存档信息
+            if(!File.Exists(info.Path)) continue;  // 如果存档文件不存在, 则跳过
+            // 如果封面图片存在, 则加载封面图片
+            if(File.Exists(info.FrontCoverPath))
+            {
+                BitmapImage bitmapImage = new( );   // 创建一个BitmapImage对象
+                bitmapImage.BeginInit( );
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad; // 确保图像数据在加载后缓存到内存中
+                bitmapImage.UriSource = new Uri(AppDomain.CurrentDomain.BaseDirectory + info.FrontCoverPath, UriKind.Absolute);
+                bitmapImage.CreateOptions = BitmapCreateOptions.IgnoreImageCache; // 忽略图片缓存
+                bitmapImage.EndInit( );
+                info.FrontCover = bitmapImage;
+            }
+            m_SelectSaveFileWindowVM.SaveInfos[index] = info;
+        }
+    }
+
     private void GameSave(object? sender, int index)
     {
         // 如果游戏没有运行, 则不保存
@@ -156,17 +200,11 @@ public partial class MainWindow : Window
         if(m_GameControl.NesFileInfo is null) goto end;
         var time = DateTime.Now;
 
-        // 检查存档文件夹是否存在
-        if(!Path.Exists(GameControl.DefaultSaveFilePath))
-            Directory.CreateDirectory(GameControl.DefaultSaveFilePath);
+        // 当前游戏的存档文件夹
         var gamePath = GameControl.DefaultSaveFilePath + @"\" + m_GameControl.NesFileInfo.Name;
-        // 检查当前游戏的存档文件夹是否存在
-        if(!Directory.Exists(gamePath))
-            Directory.CreateDirectory(gamePath);
-        // 检查当前游戏的存档文件夹下的当前序号的存档文件夹是否存在
+        // 当前序号的存档文件夹
         var saveFilePath = gamePath + @"\" + $"{m_GameControl.NesFileInfo.Name}_{index}";
-        if(!Path.Exists(saveFilePath))
-            Directory.CreateDirectory(saveFilePath);
+        Directory.CreateDirectory(saveFilePath);    // 创建当前序号的存档文件夹
 
         var fileInfoName = m_GameControl.NesFileInfo.Name + ".info";    // 存档信息文件名
         var fileName = m_GameControl.NesFileInfo.Name + ".save";    // 存档文件名
@@ -212,11 +250,14 @@ public partial class MainWindow : Window
         m_SelectSaveFileWindow.Hide( );
     }
 
-    private void GameLoad(object? sender, EventArgs e)
+    private void GameLoad(object? sender, int index)
     {
-        var fileName = m_GameControl.NesFileInfo?.Name + ".save";
-        using BinaryReader reader = new(File.Open(fileName, FileMode.Open));
+        var info = m_SelectSaveFileWindowVM.SaveInfos[index];
+
+        using BinaryReader reader = new(File.Open(info.Path, FileMode.Open));
         m_GameControl.Load(reader);
+
+        m_SelectSaveFileWindow.Hide( ); // 隐藏选择存档窗口
     }
 
     private void MouseUpHandle(object sender, MouseButtonEventArgs e)
