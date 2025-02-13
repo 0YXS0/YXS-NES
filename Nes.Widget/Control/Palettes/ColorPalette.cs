@@ -1,7 +1,7 @@
 ﻿// ============================================================================
 using Color = System.Windows.Media.Color;
 
-namespace Nes.Widget.Palettes;
+namespace Nes.Widget.Control.Palettes;
 
 /// <summary>
 /// 调色板基类

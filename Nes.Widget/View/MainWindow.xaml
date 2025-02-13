@@ -67,7 +67,7 @@
                 </ui:AppBarButton>
                 <ui:AppBarToggleButton
                     Command="{Binding OnlineGameCommand}"
-                    IsChecked="{Binding IsOnlineBtnClicked, Mode=OneWayToSource}"
+                    IsChecked="{Binding IsOnlineBtnClicked, Mode=TwoWay}"
                     Label="联机">
                     <ui:AppBarToggleButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.InternetSharing}" />

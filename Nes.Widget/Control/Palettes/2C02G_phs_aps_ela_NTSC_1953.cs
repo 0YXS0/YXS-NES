@@ -1,6 +1,6 @@
 ﻿using Color = System.Windows.Media.Color;
 
-namespace Nes.Widget.Palettes;
+namespace Nes.Widget.Control.Palettes;
 
 internal sealed class _2C02G_phs_aps_ela_NTSC_1953 : ColorPalette
 {

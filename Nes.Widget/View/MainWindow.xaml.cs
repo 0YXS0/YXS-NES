@@ -19,7 +19,7 @@ namespace Nes.Widget.View;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly GameControl m_GameControl = new( );
+    private readonly GameControl m_GameControl = new GameControlLocal( );
     private readonly MainWindowVM m_MainWindowVM = MainWindowVM.Instance;
     private readonly SettingWindow m_SettingWindow = new( );
     private readonly SettingWindowVM m_SettingWindowVM;
@@ -27,6 +27,8 @@ public partial class MainWindow : Window
     private readonly SelectNesFileWindowVM m_SelectNesFileWindowVM;
     private readonly SelectSaveFileWindow m_SelectSaveFileWindow = new( );
     private readonly SelectSaveFileWindowVM m_SelectSaveFileWindowVM;
+    private readonly OnlineWindow m_OnlineWindow = new( );
+    private readonly OnlineWindowVM m_OnlineWindowVM;
     private static readonly JsonSerializerOptions JsonSerializerOptions = new( )
     {
         WriteIndented = true,   // 缩进
@@ -40,6 +42,7 @@ public partial class MainWindow : Window
         m_SettingWindowVM = (SettingWindowVM)m_SettingWindow.DataContext;
         m_SelectNesFileWindowVM = (SelectNesFileWindowVM)m_SelectNesFileWindow.DataContext;
         m_SelectSaveFileWindowVM = (SelectSaveFileWindowVM)m_SelectSaveFileWindow.DataContext;
+        m_OnlineWindowVM = (OnlineWindowVM)m_OnlineWindow.DataContext;
         this.KeyDown += KeyDownHandle;
         this.KeyUp += KeyUphandle;
         this.MouseDown += MouseDownHandle;
@@ -138,6 +141,24 @@ public partial class MainWindow : Window
             else
                 m_SelectSaveFileWindowVM.GameName = "无运行游戏";
             await m_SelectSaveFileWindow.ShowAsync( );
+        };
+
+        m_OnlineWindowVM.ConnectEvent += async (_, _) =>
+        {
+            await Task.Delay(5000);
+        };
+
+        m_MainWindowVM.GameOnlineButtonClickedEvent += async (_, _) =>
+        {
+            var res = await m_OnlineWindow.ShowAsync( );
+            m_MainWindowVM.IsOnlineBtnClicked = m_OnlineWindowVM.IsConnected;
+            if(res == ContentDialogResult.Primary)
+            {
+
+            }
+            else
+            {
+            }
         };
 
         // 从文件中加载设置
