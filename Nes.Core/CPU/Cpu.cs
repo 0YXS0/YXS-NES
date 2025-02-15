@@ -188,14 +188,6 @@ public class Cpu
 
     #endregion Private Delegates
 
-    #region Public Events
-
-    public event EventHandler<CpuStepEventArgs>? Stepped;   // CPU执行操作后事件
-
-    public event EventHandler<CpuStepEventArgs>? Stepping;  // CPU正在执行操作事件
-
-    #endregion Public Events
-
     #region Public Properties
 
     /// <summary>
@@ -268,6 +260,7 @@ public class Cpu
     /// </summary>
     /// <param name="opcode">操作码</param>
     /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static AddressingMode GetInstructionAddressingMode(byte opcode)
     {
         return (AddressingMode)_addressingModes[opcode];
@@ -278,6 +271,7 @@ public class Cpu
     /// </summary>
     /// <param name="opcode">操作码</param>
     /// <returns>操作码对应的汇编指令名称</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string GetInstructionName(byte opcode)
     {
         return _opcodes[opcode].Method.Name[1..].ToUpperInvariant( );
@@ -288,6 +282,7 @@ public class Cpu
     /// </summary>
     /// <param name="opcode">操作码</param>
     /// <returns>字节数</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetInstructionSize(byte opcode)
     {
         return _instructionSizes[opcode];
@@ -339,21 +334,16 @@ public class Cpu
         // 根据寻址模式解析出操作数的真实地址
         var address = ResolveAddress(mode, (ushort)(_pc + 1), out var pageCrossed);
         var instructionSize = _instructionSizes[opcode];    // 获取操作码及其操作数共占的字节数
-        var instruction = new byte[instructionSize];
-        for(var idx = 0; idx < instructionSize; idx++)
-            instruction[idx] = _bus.ReadByte((ushort)(_pc + idx));
 
-        // 触发Stepping事件
-        Stepping?.Invoke(this, new CpuStepEventArgs(this, instruction, address, Cycles));
+        //var instruction = new byte[instructionSize];
+        //for(var idx = 0; idx < instructionSize; idx++)
+        //_ = _bus.ReadByte((ushort)(_pc + idx));
 
         _pc += (ushort)instructionSize; // 更新PC指针
         Cycles += _instructionCycles[opcode];   // 更新CPU周期数
         if(pageCrossed) Cycles += _instructionPageCycles[opcode];   // 如果操作码执行跨页，则额外增加CPU周期数
 
         _opcodes[opcode](mode, address);    // 执行操作码对应的汇编指令
-
-        // 触发Stepped事件
-        Stepped?.Invoke(this, new CpuStepEventArgs(this, instruction, address, Cycles));
 
         var opcodeCycles = Cycles - origCycles; // 执行当前操作码所需的CPU周期数
 
@@ -363,6 +353,7 @@ public class Cpu
     /// <summary>
     /// 触发NMI(不可屏蔽中断)
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void TriggerNmiInterrupt( )
     {
         _nmiInterruptTriggered = true;
@@ -372,6 +363,7 @@ public class Cpu
     /// <summary>
     /// 触发IRQ(可屏蔽中断)
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void TriggerIrqInterrupt( )
     {
         _irqInterruptTriggered = true;
@@ -419,6 +411,7 @@ public class Cpu
     /// 添加空闲周期数
     /// </summary>
     /// <param name="c">周期数</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AddIdleCycles(int c)
     {
         _idleCycles += c;
@@ -433,6 +426,7 @@ public class Cpu
     /// </summary>
     /// <param name="addressA">新地址</param>
     /// <param name="addressB">旧地址</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsPageCrossed(ushort addressA, ushort addressB)
     {
         return (addressA & 0xff) != (addressB & 0xff);

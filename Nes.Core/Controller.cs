@@ -32,13 +32,16 @@ public sealed class Controller
 
     #region Private Fields
 
-    private readonly bool[,] _buttonStates = new bool[2, 8];
+    private readonly bool[][] _buttonStates = [new bool[8], new bool[8]];
 
     private readonly byte[] _buttonIndex = new byte[2];
 
     private bool _strobe = true;
 
     #endregion Private Fields
+
+    public bool[] P1ButtonSates => _buttonStates[0];
+    public bool[] P2ButtonSates => _buttonStates[1];
 
     #region Public Methods
 
@@ -47,7 +50,7 @@ public sealed class Controller
         if(Px != 1 && Px != 2) return 0;
         if(_buttonIndex[Px - 1] > 7) return 1;
 
-        var state = _buttonStates[Px - 1, _buttonIndex[Px - 1]];
+        var state = _buttonStates[Px - 1][_buttonIndex[Px - 1]];
         if(!_strobe) _buttonIndex[Px - 1]++;
 
         return (byte)(state ? 1 : 0);
@@ -57,7 +60,7 @@ public sealed class Controller
     {
         if(Px != 1 && Px != 2) return;
         if((int)button < 0 || (int)button > 7) return;
-        _buttonStates[Px - 1, (int)button] = state;
+        _buttonStates[Px - 1][(int)button] = state;
     }
 
     public void WriteControllerInput(byte data)

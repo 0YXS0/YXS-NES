@@ -11,6 +11,7 @@
 using Nes.Core.Rendering;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Nes.Core;
 
@@ -139,13 +140,16 @@ public class Cartridge
         return new Tile(tileBlock);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte ReadChr(int address) => ChrData[address];
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte ReadPrgRom(int index)
     {
         return PrgRom[index];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteChr(int address, byte data)
     {
         if(!UseChrRam)

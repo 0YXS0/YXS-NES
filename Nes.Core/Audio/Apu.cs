@@ -7,8 +7,6 @@ namespace Nes.Core;
 
 public class Apu
 {
-    public delegate void WriteSampleHandler(float sampleValue);
-
     private float sampleRate;
     private ulong cycle;
     private byte framePeriod;
@@ -25,7 +23,7 @@ public class Apu
     /// <summary>
     /// 用于写入输出样本的处理程序
     /// </summary>
-    public WriteSampleHandler? WriteSample { get; set; }
+    public Action<float>? WriteSample { get; set; }
 
     /// <summary>
     /// 用于触发中断请求的处理程序

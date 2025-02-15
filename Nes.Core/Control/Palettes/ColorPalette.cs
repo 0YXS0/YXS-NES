@@ -1,12 +1,12 @@
-﻿// ============================================================================
-using Color = System.Windows.Media.Color;
+﻿using System.Collections.Generic;
+using System.Drawing;
 
-namespace Nes.Widget.Control.Palettes;
+namespace Nes.Core.Control.Palettes;
 
 /// <summary>
 /// 调色板基类
 /// </summary>
-internal abstract class ColorPalette
+public abstract class ColorPalette
 {
     private static readonly Dictionary<string, ColorPalette> m_palettes = new( )
     {

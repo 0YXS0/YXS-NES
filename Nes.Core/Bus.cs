@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Nes.Core;
 
@@ -35,7 +36,6 @@ public class Bus(Emulator emulator)
     #endregion Protected Fields
 
     #region Internal Methods
-
     internal void DirectMemoryRead(byte[] buffer, int start, ushort address, int size)
     {
         var index = start;
@@ -71,8 +71,10 @@ public class Bus(Emulator emulator)
     /// </summary>
     /// <param name="address">地址</param>
     /// <returns>对应数据</returns>
-    public virtual byte ReadByte(ushort address) =>
-        address switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public virtual byte ReadByte(ushort address)
+    {
+        return address switch
         {
             < 0x2000 => _ram[address & 0x07FF],
             >= 0x2000 and <= 0x3fff => emulator.Ppu.ReadRegister(MapPpuRegisterAddress(address)),
@@ -82,6 +84,7 @@ public class Bus(Emulator emulator)
             <= 0x401f => 0,
             _ => emulator.Mapper.ReadByte(address) // In case for addresses >= 0x4020
         };
+    }
 
     public virtual ushort ReadWord(ushort address)
     {
@@ -94,7 +97,7 @@ public class Bus(Emulator emulator)
     ///     Resets the internal memory.
     /// </summary>
     public void Reset( ) => Array.Clear(_ram, 0, _ram.Length);
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void WriteByte(ushort address, byte data)
     {
         switch(address)

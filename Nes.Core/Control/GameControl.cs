@@ -1,19 +1,23 @@
-﻿using NAudio.Wave;
-using Nes.Core;
-using Nes.Widget.Control.Palettes;
-using Nes.Widget.Models;
+﻿using Nes.Core.Control.Palettes;
+using System;
 using System.IO;
+using System.Threading.Tasks;
 
-namespace Nes.Widget.Control;
+namespace Nes.Core.Control;
+
+public enum GameControlType
+{
+    Local,  // 本地主机
+    LANHost,    // 局域网主机
+    INTEHost,   // 互联网主机
+    Salve,  // 从机
+}
 
 /// <summary>
 /// 游戏控制器基类
 /// </summary>
-internal abstract class GameControl
+public abstract class GameControl
 {
-    public const string DefaultNesFilePath = "D:\\YXS\\C#_Project\\SimpleFC\\NesFile";
-    public const string DefaultSaveFilePath = "SaveFile";
-
     /// <summary>
     /// 游戏打开事件
     /// </summary>
@@ -25,45 +29,59 @@ internal abstract class GameControl
     public abstract event EventHandler? GameStopped;
 
     /// <summary>
+    /// 游戏暂停事件
+    /// </summary>
+    public abstract event EventHandler? GamePaused;
+
+    /// <summary>
+    /// 游戏从暂停中恢复事件
+    /// </summary>
+    public abstract event EventHandler? GameResumed;
+
+    /// <summary>
+    /// 游戏重置事件
+    /// </summary>
+    public abstract event EventHandler? GameReseted;
+
+    /// <summary>
     /// 游戏画帧事件
     /// </summary>
-    public abstract event EventHandler? GameDrawFrame;
+    public abstract event EventHandler<byte[]>? GameDrawFrame;
 
     /// <summary>
-    /// 正在运行的NES文件信息
+    /// 游戏音频输出事件
     /// </summary>
-    public abstract NesFileInfo? NesFileInfo { get; set; }
+    public abstract event EventHandler<float>? GameAudioOut;
 
     /// <summary>
-    /// 游戏是否正在运行
+    /// 正在运行的游戏名称
     /// </summary>
-    public abstract bool IsGameRunning { get; }
+    public abstract string? GameName { get; protected set; }
 
     /// <summary>
-    /// 是否为游戏主机--true:主机，false:从机
+    /// 正在运行的游戏文件路径
     /// </summary>
-    public abstract bool IsHost { get; }
+    public abstract string? GameFilePath { get; protected set; }
 
     /// <summary>
-    /// 游戏画面像素数组
+    /// 游戏状态---0:未打开, 1:运行中, 2:暂停, 3:停止, other:未知
     /// </summary>
-    public abstract byte[] Pixels { get; }
+    public abstract int GameStatus { get; protected set; }
+
+    /// <summary>
+    /// 控制器类型
+    /// </summary>
+    public abstract GameControlType Type { get; }
 
     /// <summary>
     /// 选择的颜色调色板
     /// </summary>
     public abstract ColorPalette SelectedColorPalette { get; set; }
 
-    public GameControl( )
-    {
-        // 创建Nes文件目录
-        Directory.CreateDirectory(DefaultNesFilePath);
-    }
-
     /// <summary>
     /// 打开游戏
     /// </summary>
-    /// <param name="fileName"></param>
+    /// <param name="fileName">游戏文件路径</param>
     public abstract void OpenGame(string fileName);
 
     /// <summary>
@@ -74,12 +92,12 @@ internal abstract class GameControl
     /// <summary>
     /// 结束游戏
     /// </summary>
-    public abstract void StopGame( );
+    public abstract Task StopGame( );
 
     /// <summary>
     /// 暂停游戏
     /// </summary>
-    public abstract void PauseGame( );
+    public abstract Task PauseGame( );
 
     /// <summary>
     /// 从暂停中恢复游戏
@@ -101,17 +119,14 @@ internal abstract class GameControl
 
         if(BitConverter.ToInt32(raw, 0) != 0x1A53454E)
         {
-            Console.WriteLine("不是有效的NES文件:" + fileName);
             return (false, -1, false);
         }
         if(((raw[7] >> 2) & 0b0000_0011) != 0)
         {
-            Console.WriteLine("不支持的NES文件版本:" + fileName);
             return (false, -1, false);
         }
         if((raw[7] & 1) != 0 || (raw[7] & 2) != 0)
         {
-            Console.WriteLine("文件不是有效的NES 1.0格式:" + fileName);
             return (false, -1, false);
         }
         var Num = (raw[7] & 0b1111_0000) | (raw[6] >> 4); // Mapper编号
@@ -136,64 +151,4 @@ internal abstract class GameControl
     /// 读档
     /// </summary>
     public abstract void Load(BinaryReader reader);
-}
-
-/// <summary>
-/// 音频提供器
-/// </summary>
-internal class WriteLine : WaveProvider32
-{
-    private readonly float[] cyclicBuffer = [];
-    private int readIndex;
-    private int writeIndex;
-    private int size;
-    private readonly object queueLock = new( );
-
-    public bool Enabled { get; set; }
-
-    public WriteLine( )
-    {
-        cyclicBuffer = new float[4096];
-        readIndex = writeIndex = 0;
-        Enabled = true;
-    }
-
-    public override int Read(float[] buffer, int offset, int sampleCount)
-    {
-        lock(queueLock)
-        {
-            if(!Enabled || size == 0)
-            {
-                buffer[offset] = 0;
-                return 1;
-            }
-
-            sampleCount = Math.Min(sampleCount, size);
-
-            for(int n = 0; n < sampleCount; n++)
-            {
-                buffer[n + offset] = cyclicBuffer[readIndex++];
-                readIndex %= cyclicBuffer.Length;
-                --size;
-            }
-            return sampleCount;
-        }
-    }
-
-    public void Queue(float[] sampleValues)
-    {
-        lock(queueLock)
-        {
-            for(int index = 0; index < sampleValues.Length; index++)
-            {
-                if(size >= cyclicBuffer.Length)
-                    return;
-
-                cyclicBuffer[writeIndex] = sampleValues[index];
-                ++writeIndex;
-                writeIndex %= cyclicBuffer.Length;
-                ++size;
-            }
-        }
-    }
 }

@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Nes.Widget.Control;
+using Nes.Core.Control;
 using Nes.Widget.Models;
 using System.IO;
 

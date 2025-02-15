@@ -1,14 +1,4 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -126,14 +116,17 @@ public class Ppu(Emulator emulator)
 
     #region Public Methods
 
-    public byte ReadRegister(ushort address) =>
-        address switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte ReadRegister(ushort address)
+    {
+        return address switch
         {
             0x2002 => ReadStatus( ),
             0x2004 => ReadOamData( ),
             0x2007 => ReadPpuData( ),
             _ => throw new AccessViolationException($"Invalid register read at address {address:x8}.")
         };
+    }
 
     public void Reset( )
     {
@@ -281,6 +274,7 @@ public class Ppu(Emulator emulator)
             _ppuAddress.Value = (ushort)((_ppuAddress.Value & 0x041f) | (_t & 0x7be0));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteRegister(ushort address, byte data)
     {
         _ppuStatus.LastRegisterWrite = data;
@@ -325,7 +319,6 @@ public class Ppu(Emulator emulator)
 
     public void Save(BinaryWriter writer)
     {
-        writer.Write(_bmp);
         writer.Write(_oam);
         writer.Write(_paletteTable);
         writer.Write(_spriteIndicies);
@@ -353,7 +346,6 @@ public class Ppu(Emulator emulator)
 
     public void Load(BinaryReader reader)
     {
-        reader.Read(_bmp);
         reader.Read(_oam);
         reader.Read(_paletteTable);
         reader.Read(_spriteIndicies);
@@ -511,6 +503,7 @@ public class Ppu(Emulator emulator)
         return 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void IncrementX( )
     {
         if((_ppuAddress.Value & 0x001f) == 31)
@@ -524,6 +517,7 @@ public class Ppu(Emulator emulator)
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void IncrementY( )
     {
         if((_ppuAddress.Value & 0x7000) != 0x7000)
@@ -566,6 +560,7 @@ public class Ppu(Emulator emulator)
         return ReadData(paletteAddress);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int MirrorVramAddress(ushort address)
     {
         var index = (address - 0x2000) % 0x1000;
@@ -590,14 +585,16 @@ public class Ppu(Emulator emulator)
 
             case VramMirroring.Unknown:
             default:
-                throw new ArgumentOutOfRangeException( );
+                throw new ArgumentOutOfRangeException(nameof(address), _mirroring, "Invalid VRAM mirroring type.");
         }
 
         return index;
     }
 
-    private byte ReadData(ushort address) =>
-        address switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte ReadData(ushort address)
+    {
+        return address switch
         {
             < 0x2000 => emulator.Mapper.ReadByte(address),
             >= 0x2000 and <= 0x3eff => _vram[MirrorVramAddress(address)],
@@ -605,6 +602,7 @@ public class Ppu(Emulator emulator)
             _ => throw new AccessViolationException(
                 $"Access violation on reading from PPU memory at address {address:x8}")
         };
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private byte ReadOamData( ) => _oam[_oamAddress];
@@ -615,9 +613,7 @@ public class Ppu(Emulator emulator)
         if(_ppuAddress.Value < 0x3f00)
         {
             // ReSharper disable once SwapViaDeconstruction
-            var buffered = _internalDataBuffer;
-            _internalDataBuffer = data;
-            data = buffered;
+            (data, _internalDataBuffer) = (_internalDataBuffer, data);
         }
         else
         {
@@ -709,6 +705,7 @@ public class Ppu(Emulator emulator)
         _t = (ushort)((_t & 0xf3ff) | ((data & 0x03) << 10));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteData(ushort address, byte data)
     {
         switch(address)
@@ -737,12 +734,14 @@ public class Ppu(Emulator emulator)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteOamAddress(byte data) => _oamAddress = data;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteOamData(byte data)
     {
         _oam[_oamAddress] = data;
         _oamAddress = (_oamAddress + 1).WrapToByte( );
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteOamDma(byte data)
     {
         var startAddr = (ushort)(data << 8);
@@ -753,12 +752,14 @@ public class Ppu(Emulator emulator)
         if(emulator.Cpu.Cycles % 2 == 1) emulator.Cpu.AddIdleCycles(1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WritePpuData(byte data)
     {
         WriteData(_ppuAddress.Value, data);
         _ppuAddress.Value += (ushort)_ppuCtrl.VramAddressIncrement;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteScrollRegister(byte data)
     {
         _ppuScroll.Set(data, ref _w, ref _t);
