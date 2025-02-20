@@ -19,7 +19,7 @@
     PrimaryButtonText="连接"
     SecondaryButtonText="取消"
     mc:Ignorable="d">
-    <StackPanel Margin="10,0,0,0">
+    <StackPanel Margin="10,0,0,0" IsEnabled="{Binding IsWindowEnabled, Mode=OneWay}">
         <StackPanel Margin="0,0,0,5" Orientation="Horizontal">
             <TextBlock
                 Margin="0,0,10,0"
@@ -29,6 +29,7 @@
             <TextBox
                 Width="180"
                 ui:ControlHelper.PlaceholderText="127.0.0.1"
+                IsEnabled="{Binding IsAddressEnabled}"
                 MaxLength="20"
                 Text="{Binding ServerAddr}" />
         </StackPanel>
@@ -41,14 +42,15 @@
             <TextBox
                 Width="180"
                 ui:ControlHelper.PlaceholderText="55666"
+                IsEnabled="{Binding IsPortEnabled}"
                 MaxLength="5"
                 Text="{Binding ServerPort}" />
         </StackPanel>
         <ui:RadioButtons
             FontSize="18"
             Header="模式:"
-            SelectedIndex="{Binding SelectedIndex, Mode=OneWayToSource}">
-            <RadioButton Content="局域网主机" IsChecked="True" />
+            SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}">
+            <RadioButton Content="局域网主机" />
             <RadioButton Content="服务器主机" />
             <RadioButton Content="从机" />
         </ui:RadioButtons>
@@ -76,26 +78,22 @@
                     <TextBlock.Style>
                         <Style BasedOn="{StaticResource BodyTextBlockStyle}" TargetType="TextBlock">
                             <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsConnecting}" Value="False" />
-                                        <Condition Binding="{Binding IsConnected}" Value="True" />
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Text" Value="连接成功" />
-                                    <Setter Property="Foreground" Value="Green" />
-                                </MultiDataTrigger>
-                                <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="0">
+                                    <Setter Property="Text" Value="未连接" />
+                                    <Setter Property="Foreground" Value="Black" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="1">
                                     <Setter Property="Text" Value="连接中..." />
                                     <Setter Property="Foreground" Value="Orange" />
                                 </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsConnecting}" Value="False" />
-                                        <Condition Binding="{Binding IsConnected}" Value="False" />
-                                    </MultiDataTrigger.Conditions>
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="2">
+                                    <Setter Property="Text" Value="连接成功" />
+                                    <Setter Property="Foreground" Value="Green" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="3">
                                     <Setter Property="Text" Value="连接失败" />
                                     <Setter Property="Foreground" Value="Red" />
-                                </MultiDataTrigger>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </TextBlock.Style>
@@ -105,31 +103,24 @@
                 <ui:ProgressBar.Style>
                     <Style TargetType="ui:ProgressBar">
                         <Style.Triggers>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsConnecting}" Value="True" />
-                                    <Condition Binding="{Binding IsConnected}" Value="False" />
-                                </MultiDataTrigger.Conditions>
+                            <DataTrigger Binding="{Binding ConnectionState}" Value="0">
+                                <Setter Property="Value" Value="0" />
+                                <Setter Property="IsIndeterminate" Value="False" />
+                                <Setter Property="ShowError" Value="False" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ConnectionState}" Value="1">
                                 <Setter Property="IsIndeterminate" Value="True" />
                                 <Setter Property="ShowError" Value="False" />
-                            </MultiDataTrigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsConnecting}" Value="False" />
-                                    <Condition Binding="{Binding IsConnected}" Value="True" />
-                                </MultiDataTrigger.Conditions>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ConnectionState}" Value="2">
                                 <Setter Property="Value" Value="100" />
                                 <Setter Property="IsIndeterminate" Value="False" />
                                 <Setter Property="ShowError" Value="False" />
-                            </MultiDataTrigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsConnecting}" Value="False" />
-                                    <Condition Binding="{Binding IsConnected}" Value="False" />
-                                </MultiDataTrigger.Conditions>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ConnectionState}" Value="3">
                                 <Setter Property="IsIndeterminate" Value="True" />
                                 <Setter Property="ShowError" Value="True" />
-                            </MultiDataTrigger>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </ui:ProgressBar.Style>

@@ -61,6 +61,7 @@ partial class MainWindowVM : ObservableObject
     [RelayCommand]
     private void OnlineGame( )
     {
+        //IsOnlineBtnClicked = m_IsOnlineBtnClicked_t;
         GameOnlineButtonClickedEvent?.Invoke(this, EventArgs.Empty);
     }
 }

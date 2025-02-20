@@ -19,13 +19,16 @@ public partial class GameControlLocal : GameControl
     public override event EventHandler? GameResumed;
     public override event EventHandler? GameReseted;
     public override event EventHandler<byte[]>? GameDrawFrame;
-    public override event EventHandler<float>? GameAudioOut;
+    public override event EventHandler<float[]>? GameAudioOut;
+    public override event EventHandler<string>? ErrorEventOccurred;
 
     public override string? GameName { get; protected set; }
     public override string? GameFilePath { get; protected set; }
     public override int GameStatus { get; protected set; } = 0;
     public override GameControlType Type => GameControlType.Local;
     public override ColorPalette SelectedColorPalette { get; set; }
+    public override bool IsP1Enabled => true;
+    public override bool IsP2Enabled => true;
 
     /// <summary>
     /// 游戏帧率
@@ -46,15 +49,22 @@ public partial class GameControlLocal : GameControl
     private TaskCompletionSource? m_TcsStop = null; // 控制停止任务的返回
     private readonly Emulator m_emulator = new( );   // 模拟器
     private Thread? m_GameThread;    // 游戏线程
-    private int m_GameRunPeriod = 17; // 定时器周期(ms)
+    private int m_GameRunPeriod = 17; // 游戏运行周期(ms)
 
     public GameControlLocal( )
     {
         SelectedColorPalette = ColorPalette.GetColorPaletteByName("Default");
 
+        float[] outputBuffer = new float[128];
+        int writeIndex = 0;
         m_emulator.Apu.WriteSample = (sampleValue) =>
         {
-            GameAudioOut?.Invoke(this, sampleValue);
+            outputBuffer[writeIndex++] = sampleValue;
+            if(writeIndex == 128)
+            {
+                writeIndex = 0;
+                GameAudioOut?.Invoke(this, outputBuffer);
+            }
         };
         m_emulator.DrawFrame += DrawFrameHandle; // 画帧事件
 
@@ -198,6 +208,13 @@ public partial class GameControlLocal : GameControl
         if(GameStatus != 1 && GameStatus != 2) return; // 没有打开的游戏
 
         m_emulator.Load(reader);    // 读档
+    }
+
+    public override void Dispose( )
+    {
+        GameStatus = 3; // 设置游戏为停止状态
+        m_GameThread?.Join( );
+        GC.SuppressFinalize(this); // 防止对象被终止
     }
 }
 

@@ -31,14 +31,18 @@ public partial class OnlineWindow : ContentDialog
             }
             else
             {
-                m_VM.IsConnecting = true;
+                //m_VM.ConnectionState = 1;   // 设置连接状态为连接中
+                m_VM.IsWindowEnabled = false;
+                m_VM.OnConnectButtonClicked( ); // 触发连接按钮点击事件
             }
         };
 
         this.SecondaryButtonClick += (sender, e) =>
         {
             e.Cancel = true;    // 取消关闭对话框
-            m_VM.IsConnecting = false;
+            //m_VM.ConnectionState = 0;   // 设置连接状态为未连接
+            m_VM.IsWindowEnabled = true;
+            m_VM.OnDisConnectButtonClicked( ); // 触发断开连接按钮点击事件
         };
     }
 }

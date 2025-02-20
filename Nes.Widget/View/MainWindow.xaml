@@ -49,7 +49,7 @@
                 </ui:AppBarButton>
                 <ui:AppBarToggleButton
                     Command="{Binding PauseGameCommand}"
-                    IsChecked="{Binding IsPauseBtnClicked, Mode=OneWayToSource}"
+                    IsChecked="{Binding IsPauseBtnClicked, Mode=TwoWay}"
                     Label="暂停">
                     <ui:AppBarToggleButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Pause}" />

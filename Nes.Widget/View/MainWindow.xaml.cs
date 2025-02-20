@@ -5,12 +5,16 @@ using Nes.Core.Control;
 using Nes.Widget.Models;
 using Nes.Widget.ViewModels;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = iNKORE.UI.WPF.Modern.Controls.MessageBox;
 
 namespace Nes.Widget.View;
@@ -23,7 +27,7 @@ public partial class MainWindow : Window
     public const string DefaultNesFilePath = "NesFile";
     public const string DefaultSaveFilePath = "SaveFile";
 
-    private readonly GameControl m_GameControl = new GameControlLocal( );
+    private GameControl m_GameControl = new GameControlLocal( );
     private readonly MainWindowVM m_MainWindowVM = MainWindowVM.Instance;
     private readonly SettingWindow m_SettingWindow = new( );
     private readonly SettingWindowVM m_SettingWindowVM;
@@ -66,25 +70,7 @@ public partial class MainWindow : Window
 #if DEBUG   // 调试时让窗口始终在最上层, 方便调试
         //this.Topmost = true;
 #endif
-        m_GameControl.GameDrawFrame += (_, pixels) =>
-        {
-            Dispatcher.BeginInvoke(( ) =>
-            {
-                WriteableBitmap bitmap = m_MainWindowVM.BitImage;
-                bitmap.WritePixels(new Int32Rect(0, 0, 256, 240), pixels, 256 * 4, 0);
-            });
-        };  // 绘制一帧画面事件
-
-        float[] outputBuffer = new float[128];
-        int writeIndex = 0;
-        m_GameControl.GameAudioOut += (_, sampleValue) =>
-        {
-            outputBuffer[writeIndex++] = sampleValue;
-            writeIndex %= outputBuffer.Length;
-            if(writeIndex == 0)
-                m_apuAudioProvider.Queue(outputBuffer);
-        };
-        m_waveOut.Play( );
+        InitGameControl( ); // 初始化游戏控制器
 
         m_SelectNesFileWindowVM.SelectedNesFileEvent += async (object? _, NesFileInfo info) =>
         {
@@ -166,22 +152,84 @@ public partial class MainWindow : Window
             await m_SelectSaveFileWindow.ShowAsync( );
         };
 
-        m_OnlineWindowVM.ConnectEvent += (_, _) =>
+        m_OnlineWindowVM.ConnectButtonClickedEvent += (_, type) =>
         {
+            if(type == GameControlType.LANHost && m_GameControl is not GameControlLANHost)
+            {
+                m_GameControl?.Dispose( );
+                GameControlLANHost gameControl = new(DefaultNesFilePath);
+                m_GameControl = gameControl;
+                InitGameControl( );
+                ClearFrame( );  // 清空画面
+                gameControl.ConnectedEvent += async (_, value) =>
+                {
+                    await Dispatcher.BeginInvoke(( ) =>
+                    {
+                        m_OnlineWindowVM.ConnectionState = value;
+                    });
+                };
+            }
+            //else if(type == GameControlType.INTEHost && m_GameControl is not GameControlLANHost)
+            //{
+            //}
+            else if(type == GameControlType.Salve && m_GameControl is not GameControlSlave)
+            {
+                m_GameControl?.Dispose( );
+                GameControlSlave gameControl = new( );
+                m_GameControl = gameControl;
+                InitGameControl( );
+                ClearFrame( );  // 清空画面
+                gameControl.ConnectedEvent += async (_, value) =>
+                {
+                    await Dispatcher.BeginInvoke(( ) =>
+                    {
+                        m_OnlineWindowVM.ConnectionState = value;
+                    });
+                };
+            }
+            m_GameControl.Connect(m_OnlineWindowVM.ServerAddr, int.Parse(m_OnlineWindowVM.ServerPort));
+        };
 
+        m_OnlineWindowVM.DisConnectButtonClickedEvent += (_, _) =>
+        {
+            m_GameControl.DisConnect( );
         };
 
         m_MainWindowVM.GameOnlineButtonClickedEvent += async (_, _) =>
         {
-            var res = await m_OnlineWindow.ShowAsync( );
-            m_MainWindowVM.IsOnlineBtnClicked = m_OnlineWindowVM.IsConnected;
-            if(res == ContentDialogResult.Primary)
-            {// 进行连接
-
+            if(m_GameControl.Type is GameControlType.Local)
+            {
+                m_OnlineWindowVM.IsPortEnabled = false;
+                m_OnlineWindowVM.IsAgreementCodeEnabled = false;
+                m_OnlineWindowVM.IsAddressEnabled = false;
+                m_MainWindowVM.IsOnlineBtnClicked = false;
             }
-            else if(res == ContentDialogResult.Secondary)
-            {// 取消连接
-
+            else
+                m_MainWindowVM.IsOnlineBtnClicked = true;
+            /// 获取本地IPv4地址
+            using Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.IP);
+            socket.Connect("8.8.8.8", 65530);
+            IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;
+            m_OnlineWindowVM.ServerAddr = endPoint?.Address.ToString( ) ?? "127.0.0.1";
+            var res = await m_OnlineWindow.ShowAsync( );
+            switch(m_GameControl.Type)
+            {
+                case GameControlType.LANHost:
+                    m_OnlineWindowVM.SelectedIndex = 0;
+                    m_MainWindowVM.IsOnlineBtnClicked = true;
+                    break;
+                case GameControlType.INTEHost:
+                    m_OnlineWindowVM.SelectedIndex = 1;
+                    m_MainWindowVM.IsOnlineBtnClicked = true;
+                    break;
+                case GameControlType.Salve:
+                    m_OnlineWindowVM.SelectedIndex = 2;
+                    m_MainWindowVM.IsOnlineBtnClicked = true;
+                    break;
+                case GameControlType.Local:
+                    m_OnlineWindowVM.SelectedIndex = -1;
+                    m_MainWindowVM.IsOnlineBtnClicked = false;
+                    break;
             }
         };
 
@@ -198,6 +246,56 @@ public partial class MainWindow : Window
                 Console.WriteLine("读取setting.json设置文件失败。");
             }
         }
+    }
+
+    /// <summary>
+    /// 初始化游戏控制器
+    /// </summary>
+    private void InitGameControl( )
+    {
+        m_GameControl.GameDrawFrame += (_, pixels) =>
+        {
+            Dispatcher.BeginInvoke(( ) =>
+            {
+                WriteableBitmap bitmap = m_MainWindowVM.BitImage;
+                bitmap.WritePixels(new Int32Rect(0, 0, 256, 240), pixels, 256 * 4, 0);
+            });
+        };  // 绘制一帧画面事件
+
+        m_GameControl.GameAudioOut += (_, sampleValue) =>
+        {
+            m_apuAudioProvider.Queue(sampleValue);
+        };
+        m_waveOut.Play( );
+
+        m_GameControl.ErrorEventOccurred += (_, ErrorMsg) =>
+        {
+            MessageBox.Show(ErrorMsg, "发生错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        };
+
+        m_GameControl.GamePaused += (_, _) => { m_MainWindowVM.IsPauseBtnClicked = true; }; // 游戏暂停事件
+        m_GameControl.GameResumed += (_, _) => { m_MainWindowVM.IsPauseBtnClicked = false; };    // 游戏恢复事件
+    }
+
+    /// <summary>
+    /// 清空画面
+    /// </summary>
+    private void ClearFrame( )
+    {
+        Dispatcher.BeginInvoke(( ) =>
+        {
+            byte[] pixels = new byte[256 * 240 * 4];
+            Color color = Color.FromArgb(0, 0, 0, 0);   // 透明
+            Parallel.For(0, 256 * 240, i =>
+            {
+                pixels[i * 4 + 0] = color.B;
+                pixels[i * 4 + 1] = color.G;
+                pixels[i * 4 + 2] = color.R;
+                pixels[i * 4 + 3] = color.A;
+            });
+            WriteableBitmap bitmap = m_MainWindowVM.BitImage;
+            bitmap.WritePixels(new Int32Rect(0, 0, 256, 240), pixels, 256 * 4, 0);
+        });
     }
 
     private void SelectSaveFileWindow_OpenEventHandle(ContentDialog sender, ContentDialogOpenedEventArgs args)
@@ -314,29 +412,37 @@ public partial class MainWindow : Window
     private void MouseUpHandle(object sender, MouseButtonEventArgs e)
     {
         var key = ControlKey.ToKeyType(e.ChangedButton);
-        ProcessKey(1, key, false);
-        ProcessKey(2, key, false);
+        if(m_GameControl.IsP1Enabled)
+            ProcessKey(1, key, false);
+        if(m_GameControl.IsP2Enabled)
+            ProcessKey(2, key, false);
     }
 
     private void MouseDownHandle(object sender, MouseButtonEventArgs e)
     {
         var key = ControlKey.ToKeyType(e.ChangedButton);
-        ProcessKey(1, key, true);
-        ProcessKey(2, key, true);
+        if(m_GameControl.IsP1Enabled)
+            ProcessKey(1, key, true);
+        if(m_GameControl.IsP2Enabled)
+            ProcessKey(2, key, true);
     }
 
     private void KeyUphandle(object sender, KeyEventArgs e)
     {
         var key = ControlKey.ToKeyType(e.Key);
-        ProcessKey(1, key, false);
-        ProcessKey(2, key, false);
+        if(m_GameControl.IsP1Enabled)
+            ProcessKey(1, key, false);
+        if(m_GameControl.IsP2Enabled)
+            ProcessKey(2, key, false);
     }
 
     private void KeyDownHandle(object sender, KeyEventArgs e)
     {
         var key = ControlKey.ToKeyType(e.Key);
-        ProcessKey(1, key, true);
-        ProcessKey(2, key, true);
+        if(m_GameControl.IsP1Enabled)
+            ProcessKey(1, key, true);
+        if(m_GameControl.IsP2Enabled)
+            ProcessKey(2, key, true);
     }
 
     private void ProcessKey(int Px, ControlKey.KeyType key, bool state)

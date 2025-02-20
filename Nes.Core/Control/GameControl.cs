@@ -16,7 +16,7 @@ public enum GameControlType
 /// <summary>
 /// 游戏控制器基类
 /// </summary>
-public abstract class GameControl
+public abstract class GameControl : IDisposable
 {
     /// <summary>
     /// 游戏打开事件
@@ -51,7 +51,15 @@ public abstract class GameControl
     /// <summary>
     /// 游戏音频输出事件
     /// </summary>
-    public abstract event EventHandler<float>? GameAudioOut;
+    public abstract event EventHandler<float[]>? GameAudioOut;
+
+    /// <summary>
+    /// 发生错误事件---错误信息
+    /// </summary>
+    /// <summary>
+    /// 发生错误事件---错误信息
+    /// </summary>
+    public abstract event EventHandler<string>? ErrorEventOccurred;
 
     /// <summary>
     /// 正在运行的游戏名称
@@ -79,6 +87,16 @@ public abstract class GameControl
     public abstract ColorPalette SelectedColorPalette { get; set; }
 
     /// <summary>
+    /// 是否启用P1
+    /// </summary>
+    public abstract bool IsP1Enabled { get; }
+
+    /// <summary>
+    /// 是否启用P2
+    /// </summary>
+    public abstract bool IsP2Enabled { get; }
+
+    /// <summary>
     /// 打开游戏
     /// </summary>
     /// <param name="fileName">游戏文件路径</param>
@@ -103,6 +121,21 @@ public abstract class GameControl
     /// 从暂停中恢复游戏
     /// </summary>
     public abstract void ResumeGame( );
+
+    /// <summary>
+    /// 开启连接服务
+    /// </summary>
+    public virtual void Connect(string ip = "127.0.0.1", int port = 55666) { }
+
+    /// <summary>
+    /// 断开连接
+    /// </summary>
+    public virtual void DisConnect( ) { }
+
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public abstract void Dispose( );
 
     /// <summary>
     /// 获取NES文件信息
