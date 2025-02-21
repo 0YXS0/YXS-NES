@@ -124,14 +124,14 @@ public class Ppu(Emulator emulator)
             0x2002 => ReadStatus( ),
             0x2004 => ReadOamData( ),
             0x2007 => ReadPpuData( ),
-            _ => throw new AccessViolationException($"Invalid register read at address {address:x8}.")
+            _ => throw new AccessViolationException($"在地址读取的寄存器无效 {address:x8}.")
         };
     }
 
     public void Reset( )
     {
         if(emulator.InstalledCartridge is null)
-            throw new InvalidOperationException("Cartridge is not installed.");
+            throw new InvalidOperationException("未安装卡带。");
 
         _mirroring = emulator.InstalledCartridge.Mirroring;
 
@@ -313,7 +313,7 @@ public class Ppu(Emulator emulator)
                 break;
 
             default:
-                throw new AccessViolationException("Invalid PPU Register write to register: " + address.ToString("X4"));
+                throw new AccessViolationException("PPU寄存器写入寄存器无效： " + address.ToString("X4"));
         }
     }
 
@@ -585,7 +585,7 @@ public class Ppu(Emulator emulator)
 
             case VramMirroring.Unknown:
             default:
-                throw new ArgumentOutOfRangeException(nameof(address), _mirroring, "Invalid VRAM mirroring type.");
+                throw new ArgumentOutOfRangeException(nameof(address), _mirroring, "VRAM镜像类型无效。");
         }
 
         return index;
@@ -600,7 +600,7 @@ public class Ppu(Emulator emulator)
             >= 0x2000 and <= 0x3eff => _vram[MirrorVramAddress(address)],
             >= 0x3f00 and <= 0x3fff => _paletteTable[GetPaletteRamIndex(address)],
             _ => throw new AccessViolationException(
-                $"Access violation on reading from PPU memory at address {address:x8}")
+                $"读取的PPU内存时发生违规操作 {address:x8}")
         };
     }
 
@@ -724,7 +724,7 @@ public class Ppu(Emulator emulator)
 
             default:
                 throw new AccessViolationException(
-                    $"Access violation on writing to PPU memory at address {address:x8}");
+                    $"写入PPU内存时发生违规操作 {address:x8}");
         }
     }
 

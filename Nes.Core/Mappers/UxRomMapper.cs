@@ -21,7 +21,7 @@ internal sealed class UxRomMapper : Mapper
         : base(emulator)
     {
         if(emulator.InstalledCartridge is null)
-            throw new InvalidOperationException( );
+            throw new InvalidOperationException("未安装卡带。");
 
         _bank0 = 0;
         _bank1 = (emulator.InstalledCartridge.PrgRomBanks - 1) * 0x4000;

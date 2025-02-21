@@ -34,7 +34,7 @@ namespace Nes.Core.Rendering
         {
             if(_block.Length != 16)
             {
-                throw new ArgumentException("Size of the tile block should be 16 bytes length.");
+                throw new ArgumentException("图块的大小应为16字节长。");
             }
 
             // for each row in the tile

@@ -286,7 +286,16 @@ public partial class GameControlLANHost : GameControl
                 case 0: // 未打开
                     break;
                 case 1: // 运行中
-                    m_emulator.ExecuteStep( ); // 进行一帧画面的模拟
+                    try
+                    {
+                        m_emulator.ExecuteStep( ); // 进行一帧画面的模拟
+                    }
+                    catch(Exception ex)
+                    {
+                        ErrorEventOccurred?.Invoke(this, ex.Message);
+                        GameStopped?.Invoke(this, EventArgs.Empty);
+                        return;
+                    }
                     break;
                 case 2: // 暂停
                     if(m_TcsPause is not null)

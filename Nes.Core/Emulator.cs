@@ -130,7 +130,7 @@ public class Emulator
     public string Disassemble( )
     {
         if(InstalledCartridge is null)
-            throw new InvalidOperationException("Cartridge is not installed.");
+            throw new InvalidOperationException("未安装卡带。");
 
         Cpu.Reset( );
         Bus.Reset( );

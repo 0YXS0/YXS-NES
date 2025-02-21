@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nes.Core.Audio.Generators
 {
-    public class PulseGenerator: ProceduralGenerator
+    public class PulseGenerator : ProceduralGenerator
     {
         public PulseGenerator(byte channel)
         {
-            if (channel != 1 && channel != 2)
-                throw new ArgumentOutOfRangeException("channel", "channel should have value 1 or 2");
+            if(channel != 1 && channel != 2)
+                throw new ArgumentOutOfRangeException(nameof(channel), "通道应具有值1或2");
 
             this.Channel = channel;
         }
@@ -34,16 +30,16 @@ namespace Nes.Core.Audio.Generators
         {
             get
             {
-                if (!Enabled)
+                if(!Enabled)
                     return 0;
 
-                if (LengthValue == 0)
+                if(LengthValue == 0)
                     return 0;
 
-                if (dutyTable[DutyMode][DutyValue] == 0)
+                if(dutyTable[DutyMode][DutyValue] == 0)
                     return 0;
 
-                if (TimerPeriod < 8 || TimerPeriod > 0x7FF)
+                if(TimerPeriod < 8 || TimerPeriod > 0x7FF)
                     return 0;
 
                 //if (!SweepNegate && TimerPeriod + (TimerPeriod >> SweepShift) > 0x7FF)
@@ -52,7 +48,7 @@ namespace Nes.Core.Audio.Generators
                 return EnvelopeEnabled ? EnvelopeVolume : ConstantVolume;
             }
         }
-        
+
         public byte Sweep
         {
             set
@@ -78,7 +74,7 @@ namespace Nes.Core.Audio.Generators
         {
             set
             {
-                if (!Enabled) return;
+                if(!Enabled) return;
 
                 LengthValue = lengthTable[value >> 3];
                 TimerPeriod = (ushort)((TimerPeriod & 0x00FF) | ((value & 7) << 8));
@@ -107,9 +103,9 @@ namespace Nes.Core.Audio.Generators
         public byte EnvelopeVolume { get; private set; }
         public byte ConstantVolume { get; private set; }
 
-        public override void StepTimer()
+        public override void StepTimer( )
         {
-            if (TimerValue == 0)
+            if(TimerValue == 0)
             {
                 TimerValue = TimerPeriod;
                 ++DutyValue;
@@ -121,25 +117,25 @@ namespace Nes.Core.Audio.Generators
             }
         }
 
-        public void StepEnvelope()
+        public void StepEnvelope( )
         {
-            if (EnvelopeStart)
+            if(EnvelopeStart)
             {
                 EnvelopeVolume = 15;
                 EnvelopeValue = EnvelopePeriod;
                 EnvelopeStart = false;
             }
-            else if (EnvelopeValue > 0)
+            else if(EnvelopeValue > 0)
             {
                 --EnvelopeValue;
             }
             else
             {
-                if (EnvelopeVolume > 0)
+                if(EnvelopeVolume > 0)
                 {
                     --EnvelopeVolume;
                 }
-                else if (EnvelopeLoop)
+                else if(EnvelopeLoop)
                 {
                     EnvelopeVolume = 15;
                 }
@@ -147,24 +143,24 @@ namespace Nes.Core.Audio.Generators
             }
         }
 
-        public void StepSweep()
+        public void StepSweep( )
         {
-            if (SweepReload)
+            if(SweepReload)
             {
-                if (SweepEnabled && SweepValue == 0)
-                    ApplySweep();
+                if(SweepEnabled && SweepValue == 0)
+                    ApplySweep( );
 
                 SweepValue = SweepPeriod;
                 SweepReload = false;
             }
-            else if (SweepValue > 0)
+            else if(SweepValue > 0)
             {
                 --SweepValue;
             }
             else
             {
-                if (SweepEnabled)
-                    ApplySweep();
+                if(SweepEnabled)
+                    ApplySweep( );
 
                 SweepValue = SweepPeriod;
             }
@@ -199,36 +195,36 @@ namespace Nes.Core.Audio.Generators
         {
             base.LoadState(binaryReader);
 
-            Channel = binaryReader.ReadByte();
+            Channel = binaryReader.ReadByte( );
 
-            DutyMode = binaryReader.ReadByte();
-            DutyValue = binaryReader.ReadByte();
+            DutyMode = binaryReader.ReadByte( );
+            DutyValue = binaryReader.ReadByte( );
 
-            SweepReload = binaryReader.ReadBoolean();
-            SweepEnabled = binaryReader.ReadBoolean();
-            SweepNegate = binaryReader.ReadBoolean();
-            SweepShift = binaryReader.ReadByte();
-            SweepPeriod = binaryReader.ReadByte();
-            SweepValue = binaryReader.ReadByte();
+            SweepReload = binaryReader.ReadBoolean( );
+            SweepEnabled = binaryReader.ReadBoolean( );
+            SweepNegate = binaryReader.ReadBoolean( );
+            SweepShift = binaryReader.ReadByte( );
+            SweepPeriod = binaryReader.ReadByte( );
+            SweepValue = binaryReader.ReadByte( );
 
-            EnvelopeEnabled = binaryReader.ReadBoolean();
-            EnvelopeLoop = binaryReader.ReadBoolean();
-            EnvelopeStart = binaryReader.ReadBoolean();
-            EnvelopePeriod = binaryReader.ReadByte();
-            EnvelopeValue = binaryReader.ReadByte();
-            EnvelopeVolume = binaryReader.ReadByte();
-            ConstantVolume = binaryReader.ReadByte();
+            EnvelopeEnabled = binaryReader.ReadBoolean( );
+            EnvelopeLoop = binaryReader.ReadBoolean( );
+            EnvelopeStart = binaryReader.ReadBoolean( );
+            EnvelopePeriod = binaryReader.ReadByte( );
+            EnvelopeValue = binaryReader.ReadByte( );
+            EnvelopeVolume = binaryReader.ReadByte( );
+            ConstantVolume = binaryReader.ReadByte( );
         }
 
-        private void ApplySweep()
+        private void ApplySweep( )
         {
             ushort delta = (ushort)(TimerPeriod >> SweepShift);
 
-            if (SweepNegate)
+            if(SweepNegate)
             {
                 TimerPeriod -= delta;
 
-                if (Channel == 1)
+                if(Channel == 1)
                     --TimerPeriod;
             }
             else

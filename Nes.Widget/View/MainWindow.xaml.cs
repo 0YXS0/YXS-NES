@@ -201,6 +201,11 @@ public partial class MainWindow : Window
                     });
                 };
             }
+            if(type == GameControlType.Salve)
+            {
+                var gameControl = (GameControlSlave)m_GameControl;
+                gameControl.AgreementCode = m_OnlineWindowVM.AgreementCode;
+            }
             m_GameControl.Connect(m_OnlineWindowVM.ServerAddr, int.Parse(m_OnlineWindowVM.ServerPort));
         };
 
@@ -283,10 +288,14 @@ public partial class MainWindow : Window
         };
         m_waveOut.Play( );  // 开始播放音频
 
-        m_GameControl.ErrorEventOccurred += (_, ErrorMsg) =>
+        m_GameControl.ErrorEventOccurred += async (_, ErrorMsg) =>
         {
-            MessageBox.Show(ErrorMsg, "发生错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            await Dispatcher.BeginInvoke(( ) =>
+            {
+                MessageBox.Show(ErrorMsg, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            });
         };
+
         m_GameControl.GameOpened += (_, _) =>
         {
             string title = MainWindowVM.OriginTitle;

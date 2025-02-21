@@ -77,6 +77,11 @@ public partial class GameControlSlave : GameControl
         private set;
     } = [];
 
+    /// <summary>
+    /// 约定码
+    /// </summary>
+    public string AgreementCode { get; set; } = "123456";
+
     private readonly SortedList<uint, byte[]> m_ImageCompressedDataList = [];
     private readonly object m_ImageCompressedDataLock = new( );
     private readonly byte[] m_bitmapData = new byte[256 * 240]; // 画面像素
@@ -137,7 +142,7 @@ public partial class GameControlSlave : GameControl
             {/// 连接中持续发送连接请求
                 var buffer = new byte[10];
                 MemoryStream ms = new(buffer);
-                ms.Write(Encoding.UTF8.GetBytes("123456"));
+                ms.Write(Encoding.UTF8.GetBytes(AgreementCode)); // 约定码
                 ms.Write(BitConverter.GetBytes(1));
                 DataFrame dataFrame = new(DataFrameType.ConnectionRequest,
                     Interlocked.Increment(ref m_SequenceNumber), buffer);
@@ -193,19 +198,26 @@ public partial class GameControlSlave : GameControl
         {
             Watch.Restart( );
 
-            if(m_ImageCompressedDataList.Count > 0)
+            try
             {
-                lock(m_ImageCompressedDataLock)
+                if(m_ImageCompressedDataList.Count > 0)
                 {
-                    buffer = m_ImageCompressedDataList.Values[0];
-                    m_ImageCompressedDataList.RemoveAt(0);
+                    lock(m_ImageCompressedDataLock)
+                    {
+                        buffer = m_ImageCompressedDataList.Values[0];
+                        m_ImageCompressedDataList.RemoveAt(0);
+                    }
+                    MemoryStream ms = new(buffer);
+                    //解压画面数据
+                    using var deflateStream = new DeflateStream(ms, CompressionMode.Decompress);
+                    deflateStream.Read(m_bitmapData);
+                    deflateStream.Close( );
+                    DrawFrameHandle(m_bitmapData);
                 }
-                MemoryStream ms = new(buffer);
-                //解压画面数据
-                using var deflateStream = new DeflateStream(ms, CompressionMode.Decompress);
-                deflateStream.Read(m_bitmapData);
-                deflateStream.Close( );
-                DrawFrameHandle(m_bitmapData);
+            }
+            catch(Exception e)
+            {
+                ErrorEventOccurred?.Invoke(this, e.Message);
             }
 
             var sendframe = new DataFrame(DataFrameType.OperationSyncRequest,
@@ -492,14 +504,10 @@ public partial class GameControlSlave : GameControl
     }
 
     public override void Save(BinaryWriter writer)
-    {
-        if(GameStatus != 1 && GameStatus != 2) return; // 没有打开的游戏
-    }
+    { }
 
     public override void Load(BinaryReader reader)
-    {
-        if(GameStatus != 1 && GameStatus != 2) return; // 没有打开的游戏
-    }
+    { }
 
     public override void Dispose( )
     {

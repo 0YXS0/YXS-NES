@@ -45,12 +45,12 @@ public class Cartridge
         using var binaryReader = new BinaryReader(stream);
         var raw = binaryReader.ReadBytes((int)stream.Length);
         if(BitConverter.ToInt32(raw, 0) != NES_HEADER_VALUE)
-            throw new FormatException("The file is not in a correct format.");
+            throw new FormatException("Nes文件格式不正确。");
 
-        if(((raw[7] >> 2) & 0b0000_0011) != 0) throw new NotSupportedException("The iNES version is not supported.");
+        if(((raw[7] >> 2) & 0b0000_0011) != 0) throw new NotSupportedException("不支持Nes文件版本。");
 
         if((raw[7] & 1) != 0 || (raw[7] & 2) != 0)
-            throw new FormatException("The file is not in a valid iNES 1.0 format.");
+            throw new FormatException("该文件不是有效的Nes 1.0文件格式。");
 
         if(Bit.HasSet(raw[6], 3))
         {
@@ -154,7 +154,7 @@ public class Cartridge
     {
         if(!UseChrRam)
         {
-            throw new AccessViolationException($"Can't modify CHR ROM data at address {address:x8}");
+            throw new AccessViolationException($"无法修改地址处的CHR ROM数据 {address:x8}");
         }
 
         ChrData[address] = data;

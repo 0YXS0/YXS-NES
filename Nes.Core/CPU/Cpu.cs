@@ -1136,7 +1136,7 @@ public class Cpu
                 break;
 
             default:
-                throw new NotSupportedException($"{mode} is not supported.");
+                throw new NotSupportedException($"{mode} 不支持。");
         }
 
         return result;
