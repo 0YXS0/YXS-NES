@@ -67,6 +67,16 @@ public partial class GameControlSlave : GameControl
         }
     } = 60;
 
+
+    /// <summary>
+    /// 主机支持的所有Nes游戏文件名
+    /// </summary>
+    public (int MapperNum, string Name)[] NesfileNames
+    {
+        get;
+        private set;
+    } = [];
+
     private readonly SortedList<uint, byte[]> m_ImageCompressedDataList = [];
     private readonly object m_ImageCompressedDataLock = new( );
     private readonly byte[] m_bitmapData = new byte[256 * 240]; // 画面像素
@@ -286,6 +296,15 @@ public partial class GameControlSlave : GameControl
                 break;
 
             case DataFrameType.OpenGameResponse:    /// 打开游戏响应
+                var obj = dataFrame.Analyze( );
+                if(obj is not (bool, string)) break;
+                (var isSuccess, var Name) = ((bool, string))obj;
+                if(isSuccess)
+                {
+                    GameName = Name;    // 保存游戏名称
+                    GameFilePath = Name;    // 保存游戏文件路径
+                    GameStatus = 1; // 设置游戏状态为运行中
+                }
                 GameOpened?.Invoke(this, EventArgs.Empty);  // 触发游戏打开事件
                 break;
 
@@ -319,7 +338,7 @@ public partial class GameControlSlave : GameControl
                 break;
 
             case DataFrameType.ImageDataRequest:
-                var obj = dataFrame.Analyze( );
+                obj = dataFrame.Analyze( );
                 if(obj is not (uint, byte[])) break;
                 (var num, var buffer) = ((uint, byte[]))obj;
                 lock(m_ImageCompressedDataLock)
@@ -354,6 +373,16 @@ public partial class GameControlSlave : GameControl
                 break;
 
             case DataFrameType.HeartbeatResponse:   // 心跳响应
+                break;
+
+            case DataFrameType.NesFileInfosRequest:
+                obj = dataFrame.Analyze( );
+                if(obj is not (int, string)[]) break;
+                NesfileNames = ((int, string)[])obj;
+                sendframe = new(DataFrameType.NesFileInfosResponse,
+                    Interlocked.Increment(ref m_SequenceNumber),
+                    BitConverter.GetBytes(true));
+                m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
                 break;
 
             default:
@@ -395,15 +424,10 @@ public partial class GameControlSlave : GameControl
 
     public override void OpenGame(string nesFilePath)
     {
-        if(!File.Exists(nesFilePath)) return; // 文件不存在
-        GameName = Path.GetFileNameWithoutExtension(nesFilePath); // 获取游戏名称
-        GameFilePath = nesFilePath; // 保存游戏文件路径
-        GameStatus = 1; // 设置游戏状态为运行中
-
         if(ConnectionState == 2)
         {/// 已连接且非对方请求打开游戏
             MemoryStream ms = new(50);
-            ms.Write(Encoding.UTF8.GetBytes(GameName!));
+            ms.Write(Encoding.UTF8.GetBytes(nesFilePath));
             DataFrame sendframe = new(DataFrameType.OpenGameRequest,
                 Interlocked.Increment(ref m_SequenceNumber),
                 ms);
@@ -452,6 +476,7 @@ public partial class GameControlSlave : GameControl
     {
         m_ButtonState[(byte)btn] = state ? (byte)1 : (byte)0;
     }
+
     private void DrawFrameHandle(byte[] bitmapData)
     {
         var colors = SelectedColorPalette.Colors;

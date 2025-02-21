@@ -84,13 +84,26 @@ public partial class MainWindow : Window
                 await m_GameControl.StopGame( );  // 会阻塞调用线程, 所以要放在新线程中,防止阻塞主线程
             m_GameControl.OpenGame(info.Path);
 
-            m_MainWindowVM.Title = MainWindowVM.OriginTitle + " · " + info.Name;
             m_SelectNesFileWindow.Hide( );  // 隐藏选择文件窗口
         };
 
         m_MainWindowVM.GameOpenButtonClickedEvent += async (_, _) =>
         {
-            await m_SelectNesFileWindowVM.SelectnesFile(DefaultNesFilePath);
+            if(m_GameControl is not GameControlSlave)
+                await m_SelectNesFileWindowVM.SelectNesFile(DefaultNesFilePath);
+            else
+            {
+                var gameControl = (GameControlSlave)m_GameControl;
+                int index = 0;
+                m_SelectNesFileWindowVM.Infos = gameControl.NesfileNames.Select(info => new NesFileInfo
+                {
+                    Index = index++,
+                    Name = info.Name,
+                    Path = info.Name,
+                    MapperNumber = info.MapperNum,
+                    IsSupported = true,
+                }).ToArray( );
+            }
             await m_SelectNesFileWindow.ShowAsync( );
         };
 
@@ -160,6 +173,8 @@ public partial class MainWindow : Window
                 GameControlLANHost gameControl = new(DefaultNesFilePath);
                 m_GameControl = gameControl;
                 InitGameControl( );
+                m_MainWindowVM.IsSaveBtnEnabled = true;    // 启用存档按钮
+                m_MainWindowVM.IsLoadBtnEnabled = true;    // 启用读档按钮
                 ClearFrame( );  // 清空画面
                 gameControl.ConnectedEvent += async (_, value) =>
                 {
@@ -169,15 +184,14 @@ public partial class MainWindow : Window
                     });
                 };
             }
-            //else if(type == GameControlType.INTEHost && m_GameControl is not GameControlLANHost)
-            //{
-            //}
             else if(type == GameControlType.Salve && m_GameControl is not GameControlSlave)
             {
                 m_GameControl?.Dispose( );
                 GameControlSlave gameControl = new( );
                 m_GameControl = gameControl;
                 InitGameControl( );
+                m_MainWindowVM.IsSaveBtnEnabled = false;    // 禁用存档按钮
+                m_MainWindowVM.IsLoadBtnEnabled = false;    // 禁用读档按钮
                 ClearFrame( );  // 清空画面
                 gameControl.ConnectedEvent += async (_, value) =>
                 {
@@ -253,6 +267,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void InitGameControl( )
     {
+        m_MainWindowVM.Title = MainWindowVM.OriginTitle;
         m_GameControl.GameDrawFrame += (_, pixels) =>
         {
             Dispatcher.BeginInvoke(( ) =>
@@ -266,13 +281,22 @@ public partial class MainWindow : Window
         {
             m_apuAudioProvider.Queue(sampleValue);
         };
-        m_waveOut.Play( );
+        m_waveOut.Play( );  // 开始播放音频
 
         m_GameControl.ErrorEventOccurred += (_, ErrorMsg) =>
         {
             MessageBox.Show(ErrorMsg, "发生错误", MessageBoxButton.OK, MessageBoxImage.Error);
         };
-
+        m_GameControl.GameOpened += (_, _) =>
+        {
+            string title = MainWindowVM.OriginTitle;
+            if(m_GameControl is GameControlLocal) title += " · 本地";
+            else if(m_GameControl is GameControlLANHost) title += " · 局域网主机";
+            //else if(m_GameControl is GameControlINTEHost) title += " · 互联网主机";
+            else if(m_GameControl is GameControlSlave) title += " · 从机";
+            title += " · " + m_GameControl.GameName;
+            m_MainWindowVM.Title = title;
+        }; // 游戏打开事件
         m_GameControl.GamePaused += (_, _) => { m_MainWindowVM.IsPauseBtnClicked = true; }; // 游戏暂停事件
         m_GameControl.GameResumed += (_, _) => { m_MainWindowVM.IsPauseBtnClicked = false; };    // 游戏恢复事件
     }

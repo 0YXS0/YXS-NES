@@ -56,9 +56,6 @@ public abstract class GameControl : IDisposable
     /// <summary>
     /// 发生错误事件---错误信息
     /// </summary>
-    /// <summary>
-    /// 发生错误事件---错误信息
-    /// </summary>
     public abstract event EventHandler<string>? ErrorEventOccurred;
 
     /// <summary>

@@ -15,7 +15,7 @@ partial class MainWindowVM : ObservableObject
     public event EventHandler? GameOnlineButtonClickedEvent;  // 在线游戏按钮点击事件
     public event EventHandler? SettingButtonClickedEvent;   // 设置按钮点击事件
 
-    public const string OriginTitle = "YXS-NES · 本地";   // 原始标题
+    public const string OriginTitle = "YXS-NES";   // 原始标题
     [ObservableProperty]
     private string m_title = OriginTitle;
 
@@ -24,6 +24,12 @@ partial class MainWindowVM : ObservableObject
 
     [ObservableProperty]
     private bool m_IsOnlineBtnClicked = false;
+
+    [ObservableProperty]
+    private bool m_IsSaveBtnEnabled = true;
+
+    [ObservableProperty]
+    private bool m_IsLoadBtnEnabled = true;
 
     [ObservableProperty]
     private WriteableBitmap m_BitImage = new(256, 240, 96, 96, PixelFormats.Bgra32, null);
@@ -61,7 +67,6 @@ partial class MainWindowVM : ObservableObject
     [RelayCommand]
     private void OnlineGame( )
     {
-        //IsOnlineBtnClicked = m_IsOnlineBtnClicked_t;
         GameOnlineButtonClickedEvent?.Invoke(this, EventArgs.Empty);
     }
 }

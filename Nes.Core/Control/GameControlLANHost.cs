@@ -6,9 +6,11 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ThreadState = System.Threading.ThreadState;
@@ -65,7 +67,6 @@ public partial class GameControlLANHost : GameControl
     } = 60;
 
     private uint m_ScreenNumber = 0;   // 画面编号
-    private uint m_AudioNumber = 0;    // 音频编号
     private readonly byte[] m_Pixels = new byte[256 * 240 * 4]; // 画面像素
     private TaskCompletionSource? m_TcsPause = null; // 控制暂停任务的返回
     private TaskCompletionSource? m_TcsStop = null; // 控制停止任务的返回
@@ -102,6 +103,7 @@ public partial class GameControlLANHost : GameControl
     private volatile bool m_IsRequestPauseGame = false;  // 是否请求暂停游戏
     private volatile bool m_IsRequestResumeGame = false;  // 是否请求恢复游戏
     private volatile bool m_IsRequestStopGame = false;  // 是否请求停止游戏
+    private volatile bool m_IsSendNesInfos = false;  // 是否成功发送NES信息
     private volatile bool m_IsOver = false;  // 是否结束
 
     public GameControlLANHost(string nesFileDirPath)
@@ -136,9 +138,12 @@ public partial class GameControlLANHost : GameControl
         {
             if(ConnectionState == 2 && m_IsRequestOpenGame)
             {/// 有从机连接且请求打开游戏
+                MemoryStream stream = new( );
+                stream.Write(BitConverter.GetBytes(true));
+                stream.Write(Encoding.UTF8.GetBytes(GameName!));
                 DataFrame sendframe = new(DataFrameType.OpenGameResponse,
-                    Interlocked.Increment(ref m_SequenceNumber),
-                    BitConverter.GetBytes(true));
+                                Interlocked.Increment(ref m_SequenceNumber),
+                                stream);
                 m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
                 m_IsRequestOpenGame = false;    // 重置请求打开游戏
             }
@@ -186,7 +191,7 @@ public partial class GameControlLANHost : GameControl
             }
         };
 
-        m_HeartbeatTimer = new((_) =>
+        m_HeartbeatTimer = new(async (_) =>
         {
             m_HeartbeatTimer!.Change(Timeout.Infinite, 1000);    // 停止心跳定时器
             if(m_UdpClient is null) return;
@@ -196,6 +201,35 @@ public partial class GameControlLANHost : GameControl
                             Interlocked.Increment(ref m_SequenceNumber), []);
                 m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
                 Interlocked.Increment(ref m_HearbeatCount); // 心跳计数加1
+
+                if(!m_IsSendNesInfos)
+                {
+                    // 获取文件夹内的所有文件（不包括子文件夹中的文件）
+                    using MemoryStream stream = new( );
+                    using BinaryWriter writer = new(stream);
+                    var fullPath = Path.GetFullPath(m_NesFileDirPath);
+                    string[] files = Directory.GetFiles(fullPath, "*.nes");
+                    var tasks = files.Select(async (nesFilePath) =>
+                    {
+                        var (res, mapperNum, isSupported) = await GameControl.GetNesFileInfoAsync(nesFilePath);
+                        var nesFileName = Path.GetFileNameWithoutExtension(nesFilePath);
+                        return (nesFileName, mapperNum, isSupported);
+                    });
+                    var Infos = await Task.WhenAll(tasks);
+                    writer.Write(Infos.Count(info => info.isSupported));
+                    foreach(var (nesFileName, mapperNum, isSupported) in Infos)
+                    {
+                        if(isSupported)
+                        {
+                            writer.Write(mapperNum);    // Mapper号
+                            writer.Write(Path.GetFileNameWithoutExtension(nesFileName));    // 游戏名称
+                        }
+                    }
+                    sendframe = new(DataFrameType.NesFileInfosRequest,
+                       Interlocked.Increment(ref m_SequenceNumber),
+                       stream);
+                    m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+                }
             }
             if(m_HearbeatCount > 10)
             {/// 心跳计数大于10或者未连接
@@ -366,21 +400,30 @@ public partial class GameControlLANHost : GameControl
     /// </summary>
     private async Task ProcessorDataHandle(DataFrame dataFrame)
     {
-        //MemoryStream? ms;
         DataFrame? sendframe;
         Interlocked.Exchange(ref m_SequenceNumber, dataFrame.SequenceNumber);   // 更新数据帧序列号
         switch(dataFrame.Type)
         {
             case DataFrameType.ConnectionRequest:   // 连接请求
-                if(ConnectionState == 2) break;  // 已连接
-                ConnectionState = 2;   // 设置已连接
+                if(ConnectionState == 2) break; // 已连接
+                ConnectionState = 2;    // 设置已连接
                 var obj = dataFrame.Analyze( );
                 if(obj is not (string, int)) break;
                 var (_, connectCount) = ((string, int))obj;
                 var buffer = BitConverter.GetBytes(connectCount);
                 sendframe = new(DataFrameType.ConnectionResponse,
                     Interlocked.Increment(ref m_SequenceNumber), buffer);
-                m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+                m_SendDataQueue.Add(sendframe); // 将数据帧加入发送数据队列
+                if(GameStatus == 1 || GameStatus == 2)
+                {
+                    MemoryStream stream = new( );
+                    stream.Write(BitConverter.GetBytes(true));
+                    stream.Write(Encoding.UTF8.GetBytes(GameName!));
+                    sendframe = new(DataFrameType.OpenGameResponse,
+                                    Interlocked.Increment(ref m_SequenceNumber),
+                                    stream);
+                    m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+                }
                 break;
 
             case DataFrameType.OpenGameRequest: // 打开游戏请求
@@ -391,9 +434,12 @@ public partial class GameControlLANHost : GameControl
                 var gameName = (string)obj;
                 if(!File.Exists(Path.Combine(m_NesFileDirPath, gameName + ".nes")))
                 {
+                    MemoryStream stream = new( );
+                    stream.Write(BitConverter.GetBytes(false));
+                    stream.Write(Encoding.UTF8.GetBytes(gameName));
                     sendframe = new(DataFrameType.OpenGameResponse,
                                     Interlocked.Increment(ref m_SequenceNumber),
-                                    BitConverter.GetBytes(false));
+                                    stream);
                     m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
                 }
                 else
@@ -441,6 +487,12 @@ public partial class GameControlLANHost : GameControl
                 break;
 
             case DataFrameType.ImageDataResponse:
+                break;
+
+            case DataFrameType.NesFileInfosResponse:
+                obj = dataFrame.Analyze( );
+                if(obj is not bool) break;
+                m_IsSendNesInfos = (bool)obj;
                 break;
 
             case DataFrameType.HeartbeatRequest:    // 心跳请求
@@ -511,6 +563,18 @@ public partial class GameControlLANHost : GameControl
         };
         m_GameThread.Start( );  // 启动游戏线程
         GameStatus = 1; // 设置游戏状态为运行中
+
+        if(ConnectionState == 2 && !m_IsRequestOpenGame)
+        {
+            MemoryStream stream = new( );
+            stream.Write(BitConverter.GetBytes(true));
+            stream.Write(Encoding.UTF8.GetBytes(GameName));
+            DataFrame sendframe = new(DataFrameType.OpenGameResponse,
+                            Interlocked.Increment(ref m_SequenceNumber),
+                            stream);
+            m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+        }
+
         GameOpened?.Invoke(this, EventArgs.Empty);  // 触发游戏打开事件
     }
 

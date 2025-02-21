@@ -253,7 +253,9 @@ public class DataFrame
 
             case DataFrameType.OpenGameResponse:    // 打开游戏响应
                 var isSuccess = reader.ReadBoolean( );  // 是否成功
-                return isSuccess;
+                buffer = reader.ReadBytes(DataLength - sizeof(bool));
+                gameName = Encoding.UTF8.GetString(buffer); // 游戏名称
+                return (isSuccess, gameName);
 
             case DataFrameType.PauseGameRequest:    // 暂停游戏请求
                 return null;
@@ -300,6 +302,20 @@ public class DataFrame
                 isSuccess = reader.ReadBoolean( );  // 是否成功
                 return isSuccess;
 
+            case DataFrameType.NesFileInfosRequest:  // 文件信息请求
+                var fileCount = reader.ReadInt32( );  // 文件数量
+                var infos = new (int MapperNum, string Name)[fileCount];
+                for(int i = 0; i < fileCount; i++)
+                {
+                    infos[i].MapperNum = reader.ReadInt32( );  // Mapper
+                    infos[i].Name = reader.ReadString( );  // 文件名
+                }
+                return infos;
+
+            case DataFrameType.NesFileInfosResponse:
+                isSuccess = reader.ReadBoolean( );  // 是否成功
+                return isSuccess;
+
             default:
                 return null;
         }
@@ -331,7 +347,7 @@ public enum DataFrameType : byte
 
     /// <summary>
     /// 打开游戏响应
-    /// <para>[是否成功(<see langword="bool"/>)]</para>
+    /// <para>[(是否成功(<see langword="bool"/>), 游戏名称(<see langword="string"/>))]</para>
     /// </summary>
     OpenGameResponse,
 
@@ -406,6 +422,18 @@ public enum DataFrameType : byte
     /// <para>[是否成功(<see langword="bool"/>)]</para>
     /// </summary>
     OperationSyncResponse,
+
+    /// <summary>
+    /// 文件信息请求
+    /// <para>[(文件数量(<see langword="int"/>), 用<see langword="BinaryWriter"/>(Mapper,文件名)(<see langword="(int,string)[]"/>))]</para>
+    /// </summary>
+    NesFileInfosRequest,
+
+    /// <summary>
+    /// 文件信息响应
+    /// <para>[是否成功(<see langword="bool"/>)]</para>
+    /// </summary>
+    NesFileInfosResponse,
 
     /// <summary>
     /// 心跳请求

@@ -55,12 +55,18 @@
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Pause}" />
                     </ui:AppBarToggleButton.Icon>
                 </ui:AppBarToggleButton>
-                <ui:AppBarButton Command="{Binding SaveGameCommand}" Label="存档">
+                <ui:AppBarButton
+                    Command="{Binding SaveGameCommand}"
+                    IsEnabled="{Binding IsSaveBtnEnabled}"
+                    Label="存档">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Save}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarButton Command="{Binding LoadGameCommand}" Label="读档">
+                <ui:AppBarButton
+                    Command="{Binding LoadGameCommand}"
+                    IsEnabled="{Binding IsLoadBtnEnabled}"
+                    Label="读档">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Download}" />
                     </ui:AppBarButton.Icon>

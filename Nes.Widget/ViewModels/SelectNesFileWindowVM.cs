@@ -29,7 +29,7 @@ internal partial class SelectNesFileWindowVM : ObservableObject
     /// 对文件夹内的nes文件进行分析
     /// </summary>
     /// <param name="path">文件夹路径</param>
-    public async Task SelectnesFile(string path)
+    public async Task SelectNesFile(string path)
     {
         var nesFiles = Directory.GetFiles(path, "*.nes");
         int i = 0;
