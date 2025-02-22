@@ -273,9 +273,9 @@ public partial class MainWindow : Window
     private void InitGameControl( )
     {
         m_MainWindowVM.Title = MainWindowVM.OriginTitle;
-        m_GameControl.GameDrawFrame += (_, pixels) =>
+        m_GameControl.GameDrawFrame += async (_, pixels) =>
         {
-            Dispatcher.BeginInvoke(( ) =>
+            await Dispatcher.BeginInvoke(( ) =>
             {
                 WriteableBitmap bitmap = m_MainWindowVM.BitImage;
                 bitmap.WritePixels(new Int32Rect(0, 0, 256, 240), pixels, 256 * 4, 0);
@@ -296,7 +296,7 @@ public partial class MainWindow : Window
             });
         };
 
-        m_GameControl.GameOpened += (_, _) =>
+        m_GameControl.GameOpened += async (_, _) =>
         {
             string title = MainWindowVM.OriginTitle;
             if(m_GameControl is GameControlLocal) title += " · 本地";
@@ -304,10 +304,21 @@ public partial class MainWindow : Window
             //else if(m_GameControl is GameControlINTEHost) title += " · 互联网主机";
             else if(m_GameControl is GameControlSlave) title += " · 从机";
             title += " · " + m_GameControl.GameName;
-            m_MainWindowVM.Title = title;
+            await Dispatcher.BeginInvoke(( ) =>
+            {
+                m_MainWindowVM.Title = title;
+            });
         }; // 游戏打开事件
         m_GameControl.GamePaused += (_, _) => { m_MainWindowVM.IsPauseBtnClicked = true; }; // 游戏暂停事件
         m_GameControl.GameResumed += (_, _) => { m_MainWindowVM.IsPauseBtnClicked = false; };    // 游戏恢复事件
+        m_GameControl.GameStopped += async (_, _) =>
+        {
+            await Dispatcher.BeginInvoke(( ) =>
+            {
+                m_MainWindowVM.Title = MainWindowVM.OriginTitle;
+                ClearFrame( );
+            });
+        }; // 游戏停止事件
     }
 
     /// <summary>

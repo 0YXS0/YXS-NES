@@ -133,10 +133,12 @@ public partial class GameControlSlave : GameControl
         m_HeartbeatTimer = new((_) =>
         {
             m_HeartbeatTimer!.Change(Timeout.Infinite, 1000);    // 暂停定时器
-            if(m_HeartbeatCount > 10)
+            if(m_HeartbeatCount > 5)
             {
                 ConnectionState = 1;    // 设置连接状态为连接中
                 Interlocked.Exchange(ref m_HeartbeatCount, 0);    // 重置心跳计数
+                GameStatus = 3; // 设置游戏状态为停止
+                GameStopped?.Invoke(this, EventArgs.Empty); // 触发游戏停止事件
             }
             if(ConnectionState == 1)
             {/// 连接中持续发送连接请求
@@ -148,6 +150,8 @@ public partial class GameControlSlave : GameControl
                     Interlocked.Increment(ref m_SequenceNumber), buffer);
                 m_SendDataQueue.Add(dataFrame);    // 将数据帧加入发送数据队列
             }
+            if(ConnectionState == 2)
+                Interlocked.Increment(ref m_HeartbeatCount);    // 连接成功后增加心跳计数
             if(m_IsHeartbeatTimerEnabled)
                 m_HeartbeatTimer?.Change(1000, 1000);
         }, null, Timeout.Infinite, 1000); // 创建心跳定时器
@@ -170,19 +174,6 @@ public partial class GameControlSlave : GameControl
             Name = "GameThread",
         };  // 初始化游戏线程
         m_GameThread.Start( );  // 启动游戏线程
-    }
-
-    ~GameControlSlave( )
-    {
-        m_IsOver = true;
-        ConnectionState = 3;    // 设置连接失败
-        GameStatus = 3; // 设置游戏状态为停止
-        m_HeartbeatTimer.Change(Timeout.Infinite, 1000);    // 停止心跳定时器
-        m_RecvDataThread.Join( );    // 等待接收数据线程结束
-        m_SendDataThread.Join( );    // 等待发送数据线程结束
-        m_UdpClient?.Close( );    // 关闭UDP客户端
-        m_UdpClient = null;
-        m_HeartbeatTimer.Dispose( );    // 释放心跳定时器
     }
 
     /// <summary>
@@ -220,10 +211,13 @@ public partial class GameControlSlave : GameControl
                 ErrorEventOccurred?.Invoke(this, e.Message);
             }
 
-            var sendframe = new DataFrame(DataFrameType.OperationSyncRequest,
-                Interlocked.Increment(ref m_SequenceNumber),
-                m_ButtonState);  // 创建数据帧
-            m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+            if(ConnectionState == 2)
+            {
+                var sendframe = new DataFrame(DataFrameType.OperationSyncRequest,
+                            Interlocked.Increment(ref m_SequenceNumber),
+                            m_ButtonState);  // 创建数据帧
+                m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+            }
 
             var diff = (int)(RunCount * m_GameRunPeriod - RunTime);
             if(diff > 0)
@@ -246,18 +240,20 @@ public partial class GameControlSlave : GameControl
             m_ClientLock.EnterReadLock( );
             if(m_UdpClient is null)
             {// TCP客户端未连接
-                m_ClientLock.ExitReadLock( );
                 Thread.Sleep(100);
-                continue;
+                goto end;
             }
             try
             {
-                DataFrame dataFrame = m_SendDataQueue.Take( ); // 从发送数据队列中取出数据帧
-                if(dataFrame.Type != DataFrameType.None)
-                    m_UdpClient.Send(dataFrame.GetBuffer( ), m_Address, m_Port); // 发送数据
+                if(m_SendDataQueue.TryTake(out var dataFrame, 50))
+                {// 从发送数据队列中取出数据帧
+                    if(dataFrame is not null && dataFrame.Type != DataFrameType.None)
+                        m_UdpClient.Send(dataFrame.GetBuffer( ), m_Address, m_Port); // 发送数据
+                }
             }
             catch(Exception)
             { }
+        end:
             m_ClientLock.ExitReadLock( );
         }
     }
@@ -274,7 +270,6 @@ public partial class GameControlSlave : GameControl
             m_ClientLock.EnterReadLock( );
             if(m_UdpClient is null)
             {// TCP客户端未连接
-                m_ClientLock.ExitReadLock( );
                 Thread.Sleep(100);
                 goto end;
             }
@@ -316,8 +311,8 @@ public partial class GameControlSlave : GameControl
                     GameName = Name;    // 保存游戏名称
                     GameFilePath = Name;    // 保存游戏文件路径
                     GameStatus = 1; // 设置游戏状态为运行中
+                    GameOpened?.Invoke(this, EventArgs.Empty);  // 触发游戏打开事件
                 }
-                GameOpened?.Invoke(this, EventArgs.Empty);  // 触发游戏打开事件
                 break;
 
             case DataFrameType.PauseGameRequest:    // 暂停游戏请求
@@ -329,6 +324,7 @@ public partial class GameControlSlave : GameControl
                 break;
 
             case DataFrameType.PauseGameResponse:   // 暂停游戏响应
+                if(GameStatus != 2) GameStatus = 2; // 设置游戏状态为暂停
                 break;
 
             case DataFrameType.ResumeGameRequest:   // 恢复游戏请求
@@ -340,6 +336,7 @@ public partial class GameControlSlave : GameControl
                 break;
 
             case DataFrameType.ResumeGameResponse:  // 恢复游戏响应
+                if(GameStatus != 1) GameStatus = 1; // 设置游戏状态为运行中
                 break;
 
             case DataFrameType.StopGameRequest: // 关闭游戏请求
@@ -347,6 +344,7 @@ public partial class GameControlSlave : GameControl
                 break;
 
             case DataFrameType.StopGameResponse:    // 关闭游戏响应
+                if(GameStatus != 3) GameStatus = 3; // 设置游戏状态为停止
                 break;
 
             case DataFrameType.ImageDataRequest:
@@ -380,11 +378,9 @@ public partial class GameControlSlave : GameControl
                 sendframe = new(DataFrameType.HeartbeatResponse,
                     Interlocked.Increment(ref m_SequenceNumber), []);
                 m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+                if(ConnectionState == 1) ConnectionState = 2;    // 设置连接状态为已连接
                 if(m_HeartbeatCount > 0)
                     Interlocked.Decrement(ref m_HeartbeatCount);
-                break;
-
-            case DataFrameType.HeartbeatResponse:   // 心跳响应
                 break;
 
             case DataFrameType.NesFileInfosRequest:
@@ -424,21 +420,21 @@ public partial class GameControlSlave : GameControl
         m_SequenceNumber = 0;   // 重置数据帧序列号
         m_IsHeartbeatTimerEnabled = false;   // 禁用心跳定时器
         m_HeartbeatTimer.Change(Timeout.Infinite, 1000);    // 停止心跳定时器
+        m_UdpClient?.Close( );    // 关闭UDP客户端
+        m_ClientLock.EnterWriteLock( );  // 获取写锁
+        m_UdpClient = null;
+        m_ClientLock.ExitWriteLock( );  // 释放写锁
         foreach(var _ in m_SendDataQueue)
         {
             m_SendDataQueue.Take( );
         }
-        m_ClientLock.EnterWriteLock( );  // 获取写锁
-        m_UdpClient?.Close( );    // 关闭UDP客户端
-        m_UdpClient = null;
-        m_ClientLock.ExitWriteLock( );  // 释放写锁
     }
 
     public override void OpenGame(string nesFilePath)
     {
         if(ConnectionState == 2)
         {/// 已连接且非对方请求打开游戏
-            MemoryStream ms = new(50);
+            MemoryStream ms = new( );
             ms.Write(Encoding.UTF8.GetBytes(nesFilePath));
             DataFrame sendframe = new(DataFrameType.OpenGameRequest,
                 Interlocked.Increment(ref m_SequenceNumber),
@@ -460,7 +456,7 @@ public partial class GameControlSlave : GameControl
             []);
         m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
         GameStopped?.Invoke(this, EventArgs.Empty); // 触发游戏停止事件
-        return Task.Delay(0);
+        return Task.Delay(10);
     }
 
     public override Task PauseGame( )
@@ -471,7 +467,7 @@ public partial class GameControlSlave : GameControl
             []);
         m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
         GamePaused?.Invoke(this, EventArgs.Empty); // 触发游戏暂停事件
-        return Task.Delay(0);
+        return Task.Delay(10);
     }
 
     public override void ResumeGame( )
@@ -511,13 +507,12 @@ public partial class GameControlSlave : GameControl
 
     public override void Dispose( )
     {
+        DisConnect( );  // 断开连接
         m_IsOver = true;
-        ConnectionState = 3;    // 设置连接失败
-        GameStatus = 3; // 设置游戏状态为停止
-        m_HeartbeatTimer.Change(Timeout.Infinite, 1000);    // 停止心跳定时器
         m_RecvDataThread.Join( );    // 等待接收数据线程结束
         m_SendDataThread.Join( );    // 等待发送数据线程结束
         m_HeartbeatTimer.Dispose( );    // 释放心跳定时器
+        m_ClientLock.Dispose( );    // 释放读写锁
         GC.SuppressFinalize(this); // 防止对象被终止
     }
 }

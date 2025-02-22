@@ -36,8 +36,44 @@ public partial class GameControlLANHost : GameControl
     /// </summary>
     public event EventHandler<int>? ConnectedEvent;
 
-    public override string? GameName { get; protected set; }
-    public override string? GameFilePath { get; protected set; }
+    public override string? GameName
+    {
+        get
+        {
+            lock(this)
+            {
+                return field;
+            }
+        }
+        protected set
+        {
+            lock(this)
+            {
+                if(field == value) return;
+                field = value;
+            }
+        }
+    }
+
+    public override string? GameFilePath
+    {
+        get
+        {
+            lock(this)
+            {
+                return field;
+            }
+        }
+        protected set
+        {
+            lock(this)
+            {
+                if(field == value) return;
+                field = value;
+            }
+        }
+    }
+
     public override int GameStatus
     {
         get;
@@ -71,7 +107,7 @@ public partial class GameControlLANHost : GameControl
     private TaskCompletionSource? m_TcsPause = null; // 控制暂停任务的返回
     private TaskCompletionSource? m_TcsStop = null; // 控制停止任务的返回
     private readonly Emulator m_emulator = new( );   // 模拟器
-    private Thread? m_GameThread;    // 游戏线程
+    private readonly Thread m_GameThread;    // 游戏线程
     private int m_GameRunPeriod = 17; // 定时器周期(ms)
 
     private readonly string m_NesFileDirPath; // NES文件目录路径
@@ -79,7 +115,7 @@ public partial class GameControlLANHost : GameControl
     private readonly Thread m_RecvDataThread;    // 接收数据线程
     private volatile UdpClient? m_UdpClient;    // UDP客户端
     private IPEndPoint m_RemoteEndPoint = new(IPAddress.Any, 0);    // 远程端点
-    private readonly ReaderWriterLockSlim m_ClientLock = new( );    // TCP客户端锁对象
+    private readonly ReaderWriterLockSlim m_ClientLock = new( );    // UDP客户端锁对象
     private readonly BlockingCollection<DataFrame> m_SendDataQueue = [];    // 发送数据队列
     private int m_SequenceNumber;   // 数据帧序列号
     private readonly Timer m_HeartbeatTimer;    // 心跳定时器
@@ -99,7 +135,6 @@ public partial class GameControlLANHost : GameControl
             ConnectedEvent?.Invoke(this, value);
         }
     } = 0;
-    private volatile bool m_IsRequestOpenGame = false;  // 是否请求打开游戏
     private volatile bool m_IsRequestPauseGame = false;  // 是否请求暂停游戏
     private volatile bool m_IsRequestResumeGame = false;  // 是否请求恢复游戏
     private volatile bool m_IsRequestStopGame = false;  // 是否请求停止游戏
@@ -136,7 +171,7 @@ public partial class GameControlLANHost : GameControl
 
         GameOpened += (_, _) =>
         {
-            if(ConnectionState == 2 && m_IsRequestOpenGame)
+            if(ConnectionState == 2)
             {/// 有从机连接且请求打开游戏
                 MemoryStream stream = new( );
                 stream.Write(BitConverter.GetBytes(true));
@@ -145,7 +180,6 @@ public partial class GameControlLANHost : GameControl
                                 Interlocked.Increment(ref m_SequenceNumber),
                                 stream);
                 m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
-                m_IsRequestOpenGame = false;    // 重置请求打开游戏
             }
         };
 
@@ -175,12 +209,9 @@ public partial class GameControlLANHost : GameControl
 
         GameStopped += (_, _) =>
         {
-            m_GameThread = null;    // 清空游戏线程
-            GameStatus = 0; // 设置游戏状态为未打开
+            GameStatus = 3; // 设置游戏状态为未打开
             GameName = null; // 清空游戏名称
             GameFilePath = null; // 清空游戏文件路径
-            m_emulator.Reset( ); // 重置模拟器
-            m_emulator.RemoveCartridge( ); // 移除游戏卡带
             if(ConnectionState == 2 && m_IsRequestStopGame)
             {/// 有从机连接
                 DataFrame sendframe = new(DataFrameType.StopGameResponse,
@@ -231,8 +262,8 @@ public partial class GameControlLANHost : GameControl
                     m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
                 }
             }
-            if(m_HearbeatCount > 10)
-            {/// 心跳计数大于10或者未连接
+            if(m_HearbeatCount > 5)
+            {/// 心跳计数大于或者未连接
                 ConnectionState = 1;    // 设置连接状态为连接中
                 Interlocked.Exchange(ref m_HearbeatCount, 0);   // 重置心跳计数
             }
@@ -251,23 +282,13 @@ public partial class GameControlLANHost : GameControl
             IsBackground = true,
             Name = "SendDataThread",
         };  // 初始化发送数据线程
-    }
 
-    ~GameControlLANHost( )
-    {
-        m_IsOver = true;
-        ConnectionState = 3;    // 设置连接状态为连接失败
-        GameStatus = 3; // 设置游戏状态为停止
-        m_RecvDataThread.Join( );  // 等待接收数据线程结束
-        m_SendDataThread.Join( );  // 等待发送数据线程结束
-        m_GameThread?.Join( );  // 等待游戏线程结束
-        m_HeartbeatTimer.Change(Timeout.Infinite, 1000);    // 停止心跳定时器
-        m_HeartbeatTimer.Dispose( );    // 释放心跳定时器
-        m_ClientLock.EnterWriteLock( );
-        m_UdpClient?.Close( );   // 关闭UDP客户端
-        m_UdpClient = null; // 清空UDP客户端
-        m_ClientLock.ExitWriteLock( );
-        m_ClientLock.Dispose( ); // 释放锁对象
+        m_GameThread = new(GameRunHandle)
+        {
+            IsBackground = true,
+            Name = "GameThread",
+        };
+        m_GameThread.Start( );  // 启动游戏线程
     }
 
     /// <summary>
@@ -278,7 +299,7 @@ public partial class GameControlLANHost : GameControl
         long RunCount = 0;  // 运行总次数
         long RunTime = 0;   // 运行总时间
         var Watch = new Stopwatch( );
-        while(true)
+        while(!m_IsOver)
         {
             Watch.Restart( );
             switch(GameStatus)
@@ -292,9 +313,8 @@ public partial class GameControlLANHost : GameControl
                     }
                     catch(Exception ex)
                     {
+                        GameStatus = 3;
                         ErrorEventOccurred?.Invoke(this, ex.Message);
-                        GameStopped?.Invoke(this, EventArgs.Empty);
-                        return;
                     }
                     break;
                 case 2: // 暂停
@@ -328,10 +348,10 @@ public partial class GameControlLANHost : GameControl
                         // 触发游戏停止事件
                         GameStopped?.Invoke(this, EventArgs.Empty);
                     }
-                    return;
+                    break;
                 default:
                     GameStopped?.Invoke(this, EventArgs.Empty);
-                    return;
+                    break;
             }
             var diff = (int)(RunCount * m_GameRunPeriod - RunTime);
             if(diff > 0)
@@ -355,18 +375,20 @@ public partial class GameControlLANHost : GameControl
             m_ClientLock.EnterReadLock( );
             if(m_UdpClient is null)
             {// TCP客户端未连接
-                m_ClientLock.ExitReadLock( );
                 Thread.Sleep(100);
-                continue;
+                goto end;
             }
             try
             {
-                DataFrame? dataFrame = m_SendDataQueue.Take( ); // 从发送数据队列中取出数据帧
-                if(dataFrame.Type != DataFrameType.None)
-                    m_UdpClient.Send(dataFrame.GetBuffer( ), m_RemoteEndPoint); // 发送数据
+                if(m_SendDataQueue.TryTake(out var dataFrame, 50))
+                {// 从发送数据队列中取出数据帧
+                    if(dataFrame is not null && dataFrame.Type != DataFrameType.None)
+                        m_UdpClient.Send(dataFrame.GetBuffer( ), m_RemoteEndPoint); // 发送数据
+                }
             }
             catch(Exception)
             { }
+        end:
             m_ClientLock.ExitReadLock( );
         }
     }
@@ -382,7 +404,6 @@ public partial class GameControlLANHost : GameControl
             m_ClientLock.EnterReadLock( );
             if(m_UdpClient is null)
             {// TCP客户端未连接
-                m_ClientLock.ExitReadLock( );
                 Thread.Sleep(100);
                 goto end;
             }
@@ -436,27 +457,12 @@ public partial class GameControlLANHost : GameControl
                 break;
 
             case DataFrameType.OpenGameRequest: // 打开游戏请求
-                if(m_IsRequestOpenGame) break;
-                m_IsRequestOpenGame = true; // 设置请求打开游戏
                 obj = dataFrame.Analyze( );
                 if(obj is not string) break;
                 var gameName = (string)obj;
-                if(!File.Exists(Path.Combine(m_NesFileDirPath, gameName + ".nes")))
-                {
-                    MemoryStream stream = new( );
-                    stream.Write(BitConverter.GetBytes(false));
-                    stream.Write(Encoding.UTF8.GetBytes(gameName));
-                    sendframe = new(DataFrameType.OpenGameResponse,
-                                    Interlocked.Increment(ref m_SequenceNumber),
-                                    stream);
-                    m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
-                }
-                else
-                {
-                    if(GameStatus != 0)
-                        await StopGame( );  // 停止游戏
-                    OpenGame(Path.Combine(m_NesFileDirPath, gameName + ".nes"));
-                }
+                if(GameStatus == 1 || GameStatus == 2)
+                    await StopGame( );  // 停止游戏
+                OpenGame(Path.Combine(m_NesFileDirPath, gameName + ".nes"));
                 break;
 
             case DataFrameType.PauseGameRequest:    // 暂停游戏请求
@@ -504,9 +510,6 @@ public partial class GameControlLANHost : GameControl
                 m_IsSendNesInfos = (bool)obj;
                 break;
 
-            case DataFrameType.HeartbeatRequest:    // 心跳请求
-                break;
-
             case DataFrameType.HeartbeatResponse:   // 心跳响应
                 if(m_HearbeatCount > 0)
                     Interlocked.Decrement(ref m_HearbeatCount);    // 心跳计数减1
@@ -521,7 +524,9 @@ public partial class GameControlLANHost : GameControl
     {
         try
         {
+            m_ClientLock.EnterWriteLock( );
             m_UdpClient = new UdpClient(port);    // 创建UDP客户端
+            m_ClientLock.ExitWriteLock( );
             ConnectionState = 1;    // 设置连接状态为连接中
         }
         catch(SocketException)
@@ -531,7 +536,6 @@ public partial class GameControlLANHost : GameControl
             return;
         }
         m_SequenceNumber = 0;   // 重置数据帧序列号
-        m_IsRequestOpenGame = false;    // 重置请求打开游戏
         m_IsHeartbeatTimerEnabled = true;   // 启用心跳定时器
         Interlocked.Exchange(ref m_HearbeatCount, 0);   // 重置心跳计数
         m_HeartbeatTimer.Change(100, 1000);    // 启动心跳定时器
@@ -545,45 +549,39 @@ public partial class GameControlLANHost : GameControl
     {
         ConnectionState = 3;    // 设置为连接失败
         m_SequenceNumber = 0;   // 重置数据帧序列号
-        m_IsRequestOpenGame = false;    // 重置请求打开游戏
         m_IsHeartbeatTimerEnabled = false;  // 关闭心跳定时器
         m_HeartbeatTimer.Change(Timeout.Infinite, Timeout.Infinite);    // 启动心跳定时器
         Interlocked.Exchange(ref m_HearbeatCount, 0);   // 重置心跳计数
+        m_UdpClient?.Close( );   // 关闭UDP客户端
+        m_ClientLock.EnterWriteLock( );
+        m_UdpClient = null; // 清空UDP客户端
+        m_ClientLock.ExitWriteLock( );
         foreach(var _ in m_SendDataQueue)
         {
             m_SendDataQueue.Take( );
         }
-        m_ClientLock.EnterWriteLock( );
-        m_UdpClient?.Close( );   // 关闭UDP客户端
-        m_UdpClient = null; // 清空UDP客户端
-        m_ClientLock.ExitWriteLock( );
     }
 
     public override void OpenGame(string nesFilePath)
     {
-        if(!File.Exists(nesFilePath)) return; // 文件不存在
+        if(!File.Exists(nesFilePath))
+        {// 文件不存在
+            if(ConnectionState == 2)
+            {
+                MemoryStream stream = new( );
+                stream.Write(BitConverter.GetBytes(false));
+                stream.Write(Encoding.UTF8.GetBytes(Path.GetFileNameWithoutExtension(nesFilePath)));
+                DataFrame sendframe = new(DataFrameType.OpenGameResponse,
+                                Interlocked.Increment(ref m_SequenceNumber),
+                                stream);
+                m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
+            }
+            return;
+        }
         GameName = Path.GetFileNameWithoutExtension(nesFilePath); // 获取游戏名称
         GameFilePath = nesFilePath; // 保存游戏文件路径
         m_emulator.Open(nesFilePath);
-        m_GameThread = new(GameRunHandle)
-        {
-            IsBackground = true,
-            Name = "GameThread",
-        };
-        m_GameThread.Start( );  // 启动游戏线程
         GameStatus = 1; // 设置游戏状态为运行中
-
-        if(ConnectionState == 2 && !m_IsRequestOpenGame)
-        {
-            MemoryStream stream = new( );
-            stream.Write(BitConverter.GetBytes(true));
-            stream.Write(Encoding.UTF8.GetBytes(GameName));
-            DataFrame sendframe = new(DataFrameType.OpenGameResponse,
-                            Interlocked.Increment(ref m_SequenceNumber),
-                            stream);
-            m_SendDataQueue.Add(sendframe);    // 将数据帧加入发送数据队列
-        }
-
         GameOpened?.Invoke(this, EventArgs.Empty);  // 触发游戏打开事件
     }
 
@@ -665,18 +663,13 @@ public partial class GameControlLANHost : GameControl
 
     public override void Dispose( )
     {
+        DisConnect( );  // 断开连接
         m_IsOver = true;
-        ConnectionState = 3;    // 设置连接状态为连接失败
-        GameStatus = 3; // 设置游戏状态为停止
         m_RecvDataThread.Join( );  // 等待接收数据线程结束
         m_SendDataThread.Join( );  // 等待发送数据线程结束
         m_GameThread?.Join( );  // 等待游戏线程结束
         m_HeartbeatTimer.Change(Timeout.Infinite, 1000);    // 停止心跳定时器
         m_HeartbeatTimer.Dispose( );    // 释放心跳定时器
-        m_ClientLock.EnterWriteLock( );
-        m_UdpClient?.Close( );   // 关闭UDP客户端
-        m_UdpClient = null; // 清空UDP客户端
-        m_ClientLock.ExitWriteLock( );
         m_ClientLock.Dispose( ); // 释放锁对象
         GC.SuppressFinalize(this); // 防止对象被终止
     }
