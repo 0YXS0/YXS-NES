@@ -41,7 +41,8 @@ public class Emulator
     private static readonly List<MapperRegistry> _registeredMapperTypes =
     [
         new MapperRegistry(0x00, "NROM", e => new NRomMapper(e)),
-        new MapperRegistry(0x02, "UxROM", e => new UxRomMapper(e))
+        new MapperRegistry(0x02, "UxROM", e => new UxRomMapper(e)),
+        new MapperRegistry(0x03, "CnROM", e => new CnRomMapper(e)),
     ];
 
     private readonly Lazy<Bus> _bus;

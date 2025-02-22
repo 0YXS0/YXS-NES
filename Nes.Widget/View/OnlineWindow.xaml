@@ -50,9 +50,9 @@
             FontSize="18"
             Header="模式:"
             SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}">
-            <RadioButton Content="局域网主机" />
-            <RadioButton Content="服务器主机" />
-            <RadioButton Content="从机" />
+            <RadioButton Content="局域网主机(1P)" />
+            <RadioButton Content="服务器主机(1P)-未完成" />
+            <RadioButton Content="从机(2P)" />
         </ui:RadioButtons>
         <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
             <TextBlock
