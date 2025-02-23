@@ -44,6 +44,7 @@ public class Emulator
         new MapperRegistry(0x01, "MMC1", e => new MMC1Mapper(e)),
         new MapperRegistry(0x02, "UxROM", e => new UxRomMapper(e)),
         new MapperRegistry(0x03, "CnROM", e => new CnRomMapper(e)),
+        new MapperRegistry(0x04, "MMC3", e => new MMC3Mapper(e)),
     ];
 
     private readonly Lazy<Bus> _bus;

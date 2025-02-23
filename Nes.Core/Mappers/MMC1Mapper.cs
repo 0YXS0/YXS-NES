@@ -27,13 +27,13 @@ internal sealed class MMC1Mapper : Mapper
     {
         return address switch
         {
-            < 0x1000 => _emulator.InstalledCartridge?.ChrData[m_ChrBankOffsets[0] + address] ?? default,
-            < 0x2000 => _emulator.InstalledCartridge?.ChrData[m_ChrBankOffsets[1] + (address - 0x1000)] ?? default,
+            < 0x1000 => m_emulator.InstalledCartridge?.ChrData[m_ChrBankOffsets[0] + address] ?? default,
+            < 0x2000 => m_emulator.InstalledCartridge?.ChrData[m_ChrBankOffsets[1] + (address - 0x1000)] ?? default,
             < 0x6000 => 0,
             < 0x8000 => m_PrgRam[address - 0x6000],
-            < 0xC000 => _emulator.InstalledCartridge?.PrgRom[m_PrgBankOffsets[0] + (address - 0x8000)]
+            < 0xC000 => m_emulator.InstalledCartridge?.PrgRom[m_PrgBankOffsets[0] + (address - 0x8000)]
                         ?? default,
-            <= 0xFFFF => _emulator.InstalledCartridge?.PrgRom[m_PrgBankOffsets[1] + (address - 0xC000)]
+            <= 0xFFFF => m_emulator.InstalledCartridge?.PrgRom[m_PrgBankOffsets[1] + (address - 0xC000)]
                         ?? default,
         };
     }
@@ -43,10 +43,10 @@ internal sealed class MMC1Mapper : Mapper
         switch(address)
         {
             case < 0x1000:
-                _emulator.InstalledCartridge!.ChrData[m_ChrBankOffsets[0] + address] = value;
+                m_emulator.InstalledCartridge!.ChrData[m_ChrBankOffsets[0] + address] = value;
                 break;
             case < 0x2000:
-                _emulator.InstalledCartridge!.ChrData[m_ChrBankOffsets[1] + (address - 0x1000)] = value;
+                m_emulator.InstalledCartridge!.ChrData[m_ChrBankOffsets[1] + (address - 0x1000)] = value;
                 break;
             case < 0x6000:
                 break;
@@ -96,7 +96,7 @@ internal sealed class MMC1Mapper : Mapper
 
     private void UpdateBankOffsets( )
     {
-        _emulator.InstalledCartridge!.Mirroring = (m_ControlRegister & 0x03) switch
+        m_emulator.InstalledCartridge!.Mirroring = (m_ControlRegister & 0x03) switch
         {
             0 => VramMirroring.SingleLower,
             1 => VramMirroring.SingleUpper,
@@ -106,7 +106,7 @@ internal sealed class MMC1Mapper : Mapper
         };
 
         // 更新PRG-ROMbank偏移
-        int prgRomSize = _emulator.InstalledCartridge!.PrgRom.Length;
+        int prgRomSize = m_emulator.InstalledCartridge!.PrgRom.Length;
         const int prgBankSize = 0x4000; // 16KB
         m_PrgBank %= (byte)(prgRomSize / prgBankSize);
 
@@ -128,7 +128,7 @@ internal sealed class MMC1Mapper : Mapper
         }
 
         // 更新CHR-ROMbank偏移
-        int chrRomSize = _emulator.InstalledCartridge!.ChrData.Length;
+        int chrRomSize = m_emulator.InstalledCartridge!.ChrData.Length;
         const int chrBankSize = 0x1000; // 4KB
         m_ChrBank0 %= (byte)(chrRomSize / chrBankSize);
         m_ChrBank1 %= (byte)(chrRomSize / chrBankSize);

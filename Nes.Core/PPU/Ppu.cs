@@ -274,6 +274,9 @@ public class Ppu(Emulator emulator)
 
         if(_cycles >= 280 && _cycles <= 304 && _scanline == 261)
             _ppuAddress.Value = (ushort)((_ppuAddress.Value & 0x041f) | (_t & 0x7be0));
+
+        if(_cycles == 260 && _scanline > 239 && _scanline < 261 && _ppuMask.ShowBackground != 0 && _ppuMask.ShowSprites != 0)
+            emulator.Mapper.IrqTick( );
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

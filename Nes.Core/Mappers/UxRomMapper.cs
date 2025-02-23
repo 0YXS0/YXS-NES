@@ -26,9 +26,9 @@ internal sealed class UxRomMapper : Mapper
     {
         return address switch
         {
-            < 0x2000 => _emulator.InstalledCartridge?.ChrData[address] ?? default,
-            >= 0x8000 and <= 0xbfff => _emulator.InstalledCartridge?.PrgRom[_bank0 + (address - 0x8000)] ?? default,
-            >= 0xc000 and <= 0xffff => _emulator.InstalledCartridge?.PrgRom[_bank1 + (address - 0xC000)] ?? default,
+            < 0x2000 => m_emulator.InstalledCartridge?.ChrData[address] ?? default,
+            >= 0x8000 and <= 0xbfff => m_emulator.InstalledCartridge?.PrgRom[_bank0 + (address - 0x8000)] ?? default,
+            >= 0xc000 and <= 0xffff => m_emulator.InstalledCartridge?.PrgRom[_bank1 + (address - 0xC000)] ?? default,
             _ => 0
         };
     }
@@ -38,7 +38,7 @@ internal sealed class UxRomMapper : Mapper
         switch(address)
         {
             case < 0x2000:
-                _emulator.InstalledCartridge!.ChrData[address] = value;
+                m_emulator.InstalledCartridge!.ChrData[address] = value;
                 break;
 
             case >= 0x8000:
