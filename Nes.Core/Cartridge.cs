@@ -11,7 +11,6 @@
 using Nes.Core.Rendering;
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace Nes.Core;
 
@@ -113,7 +112,7 @@ public class Cartridge
 
     public int Mapper { get; }
 
-    public VramMirroring Mirroring { get; }
+    public VramMirroring Mirroring { get; set; }
 
     public byte[] PrgRom { get; }
 
@@ -138,26 +137,6 @@ public class Cartridge
         var tileBlock = new byte[16];
         Array.Copy(ChrData, startIndex, tileBlock, 0, 16);
         return new Tile(tileBlock);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public byte ReadChr(int address) => ChrData[address];
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public byte ReadPrgRom(int index)
-    {
-        return PrgRom[index];
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteChr(int address, byte data)
-    {
-        if(!UseChrRam)
-        {
-            throw new AccessViolationException($"无法修改地址处的CHR ROM数据 {address:x8}");
-        }
-
-        ChrData[address] = data;
     }
 
     /// <summary>

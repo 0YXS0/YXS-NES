@@ -1,22 +1,10 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using System;
+﻿using System;
 
 namespace Nes.Core.Mappers;
 
 [Mapper(0x02, "UxROM")]
 internal sealed class UxRomMapper : Mapper
 {
-    #region Public Constructors
-
     public UxRomMapper(Emulator emulator)
         : base(emulator)
     {
@@ -24,28 +12,23 @@ internal sealed class UxRomMapper : Mapper
             throw new InvalidOperationException("模拟器为空。");
 
         _bank0 = 0;
-        _bank1 = (emulator.InstalledCartridge.PrgRomBanks - 1) * 0x4000;
+        if(emulator.InstalledCartridge.PrgRomBanks > 1)
+            _bank1 = (emulator.InstalledCartridge.PrgRomBanks - 1) * 0x4000;
+        else
+            _bank1 = 0;
     }
-
-    #endregion Public Constructors
-
-    #region Private Fields
 
     private readonly int _bank1;
 
     private int _bank0;
 
-    #endregion Private Fields
-
-    #region Public Methods
-
     public override byte ReadByte(ushort address)
     {
         return address switch
         {
-            < 0x2000 => _emulator.InstalledCartridge?.ReadChr(address) ?? default,
-            >= 0x8000 and <= 0xbfff => _emulator.InstalledCartridge?.ReadPrgRom(_bank0 + (address - 0x8000)) ?? default,
-            >= 0xc000 and <= 0xffff => _emulator.InstalledCartridge?.ReadPrgRom(_bank1 + (address - 0xc000)) ?? default,
+            < 0x2000 => _emulator.InstalledCartridge?.ChrData[address] ?? default,
+            >= 0x8000 and <= 0xbfff => _emulator.InstalledCartridge?.PrgRom[_bank0 + (address - 0x8000)] ?? default,
+            >= 0xc000 and <= 0xffff => _emulator.InstalledCartridge?.PrgRom[_bank1 + (address - 0xC000)] ?? default,
             _ => 0
         };
     }
@@ -55,7 +38,7 @@ internal sealed class UxRomMapper : Mapper
         switch(address)
         {
             case < 0x2000:
-                _emulator.InstalledCartridge?.WriteChr(address, value);
+                _emulator.InstalledCartridge!.ChrData[address] = value;
                 break;
 
             case >= 0x8000:
@@ -70,6 +53,4 @@ internal sealed class UxRomMapper : Mapper
                 break;
         }
     }
-
-    #endregion Public Methods
 }

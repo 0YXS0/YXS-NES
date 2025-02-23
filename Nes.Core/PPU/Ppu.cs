@@ -121,10 +121,12 @@ public class Ppu(Emulator emulator)
     {
         return address switch
         {
+            0x2000 => _ppuCtrl.Value,
             0x2002 => ReadStatus( ),
             0x2004 => ReadOamData( ),
+            0x2005 => _ppuScroll.Value,
             0x2007 => ReadPpuData( ),
-            _ => throw new AccessViolationException($"在地址读取的寄存器无效 {address:x8}.")
+            _ => throw new AccessViolationException($"PPU在地址读取的寄存器无效 {address:x8}.")
         };
     }
 
@@ -594,14 +596,20 @@ public class Ppu(Emulator emulator)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private byte ReadData(ushort address)
     {
-        return address switch
+        address %= 0x4000;
+        switch(address)
         {
-            < 0x2000 => emulator.Mapper.ReadByte(address),
-            >= 0x2000 and <= 0x3eff => _vram[MirrorVramAddress(address)],
-            >= 0x3f00 and <= 0x3fff => _paletteTable[GetPaletteRamIndex(address)],
-            _ => throw new AccessViolationException(
-                $"读取的PPU内存时发生违规操作 {address:x8}")
-        };
+            case < 0x2000:
+                return emulator.Mapper.ReadByte(address);
+            case >= 0x2000 and <= 0x3eff:
+                if(address >= 0x3000) address -= 0x1000;
+                return _vram[MirrorVramAddress(address)];
+            case >= 0x3f00 and <= 0x3fff:
+                if(address >= 0x3F20) address = (ushort)(address % 0x20 + 0x3F00);
+                return _paletteTable[GetPaletteRamIndex(address)];
+            default:
+                throw new AccessViolationException($"无效的PPU地址读取:{address: x4}");
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -708,6 +716,7 @@ public class Ppu(Emulator emulator)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteData(ushort address, byte data)
     {
+        address %= 0x4000;
         switch(address)
         {
             case < 0x2000:
@@ -715,16 +724,14 @@ public class Ppu(Emulator emulator)
                 break;
 
             case >= 0x2000 and <= 0x3eff:
+                if(address >= 0x3000) address -= 0x1000;
                 _vram[MirrorVramAddress(address)] = data;
                 break;
 
             case >= 0x3f00 and <= 0x3fff:
+                if(address >= 0x3F20) address = (ushort)(address % 0x20 + 0x3F00);
                 _paletteTable[GetPaletteRamIndex(address)] = data;
                 break;
-
-            default:
-                throw new AccessViolationException(
-                    $"写入PPU内存时发生违规操作 {address:x8}");
         }
     }
 

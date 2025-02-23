@@ -1,14 +1,4 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-namespace Nes.Core.Mappers;
+﻿namespace Nes.Core.Mappers;
 
 [Mapper(0, "NROM")]
 internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
@@ -33,7 +23,7 @@ internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
     {
         return address switch
         {
-            < 0x2000 => _emulator.InstalledCartridge?.ReadChr(address) ?? default,
+            < 0x2000 => _emulator.InstalledCartridge?.ChrData[address] ?? default,
             >= 0x8000 => _emulator.InstalledCartridge?.PrgRom[MapAddress(_emulator.InstalledCartridge, address)]
                          ??
                          default,
@@ -45,7 +35,7 @@ internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
     {
         if(address < 0x2000)
         {
-            _emulator.InstalledCartridge?.WriteChr(address, value);
+            _emulator.InstalledCartridge!.ChrData[address] = value;
         }
     }
 

@@ -19,11 +19,11 @@ internal sealed class CnRomMapper(Emulator emulator) : Mapper(emulator)
     {
         return address switch
         {
-            < 0x2000 => _emulator.InstalledCartridge?.ReadChr(m_ChrBank + address) ?? default,
+            < 0x2000 => _emulator.InstalledCartridge?.ChrData[m_ChrBank + address] ?? default,
             >= 0x8000 => _emulator.InstalledCartridge?.PrgRom[MapAddress(_emulator.InstalledCartridge, address)]
                          ??
                          default,
-            _ => 0
+            _ => 0,
         };
     }
 
@@ -32,11 +32,12 @@ internal sealed class CnRomMapper(Emulator emulator) : Mapper(emulator)
         switch(address)
         {
             case < 0x2000:
-                _emulator.InstalledCartridge?.WriteChr(address, value);
+                _emulator.InstalledCartridge!.ChrData[m_ChrBank + address] = value;
                 break;
 
             case >= 0x8000:
-                m_ChrBank = (value & 0xf) * 0x2000;
+                m_ChrBank = value * 0x2000;
+                m_ChrBank %= _emulator.InstalledCartridge!.ChrRomSize;
                 break;
         }
     }
