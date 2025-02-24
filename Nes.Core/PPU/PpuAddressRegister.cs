@@ -1,14 +1,4 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using System.IO;
+﻿using System.IO;
 
 namespace Nes.Core;
 
@@ -31,14 +21,11 @@ internal struct PpuAddressRegister
     public void Reset( ) => Value = 0;
 
     /// <summary>
-    ///     Sets the value of the VRam address during the write of the PPU register.
+    /// 在 PPU 寄存器写入期间设置 VRAM 地址的值。
     /// </summary>
-    /// <param name="value">The value to be set into the VRam address.</param>
-    /// <param name="firstWriteFlag">
-    ///     The flag which indicates if the current write is a first write, this
-    ///     value is shared with PpuScrollRegister.
-    /// </param>
-    /// <param name="tempVramAddress">The temporary VRam address.</param>
+    /// <param name="value">要设置到 VRAM 地址的值。</param>
+    /// <param name="firstWriteFlag">一个标志，用于指示当前写入是否是首次写入，此值与 PpuScrollRegister 共享。</param>
+    /// <param name="tempVramAddress">临时 VRAM 地址。</param>
     public void Set(byte value, ref byte firstWriteFlag, ref ushort tempVramAddress)
     {
         if(firstWriteFlag == 0)

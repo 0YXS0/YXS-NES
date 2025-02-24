@@ -490,7 +490,7 @@ public partial class GameControlSlave : GameControl
         var colors = SelectedColorPalette.Colors;
         Parallel.For(0, 256 * 240, i =>
         {
-            Color color = colors[bitmapData[i]];
+            Color color = colors[bitmapData[i] & 0x3F];
             m_Pixels[i * 4 + 0] = color.B;
             m_Pixels[i * 4 + 1] = color.G;
             m_Pixels[i * 4 + 2] = color.R;

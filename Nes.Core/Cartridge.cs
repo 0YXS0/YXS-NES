@@ -1,14 +1,4 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using Nes.Core.Rendering;
+﻿using Nes.Core.Rendering;
 using System;
 using System.IO;
 
@@ -53,11 +43,12 @@ public class Cartridge
 
         if(Bit.HasSet(raw[6], 3))
         {
-            // _mirroring = Mirroring.FourScreen;
+            //_mirroring = Mirroring.FourScreen;
         }
         else
         {
-            Mirroring = Bit.HasSet(raw[6], 0) ? VramMirroring.Vertical : VramMirroring.Horizontal;
+            Mirroring = Bit.HasSet(raw[6], 0) ?
+                VramMirroring.Vertical : VramMirroring.Horizontal;
         }
 
         IsBatteryBacked = Bit.HasSet(raw[6], 1);
@@ -112,7 +103,7 @@ public class Cartridge
 
     public int Mapper { get; }
 
-    public VramMirroring Mirroring { get; set; }
+    public VramMirroring Mirroring { get; private set; }
 
     public byte[] PrgRom { get; }
 

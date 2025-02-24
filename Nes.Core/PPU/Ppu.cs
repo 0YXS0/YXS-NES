@@ -73,13 +73,11 @@ public class Ppu(Emulator emulator)
 
     private byte _internalDataBuffer;
 
-    private VramMirroring _mirroring;
-
     private byte _nameTableByte;
 
     private int _numSprites;
 
-    private ushort _oamAddress;
+    private byte _oamAddress;
 
     private PpuAddressRegister _ppuAddress;
     private PpuControlRegister _ppuCtrl;
@@ -102,6 +100,8 @@ public class Ppu(Emulator emulator)
 
     #region Internal Properties
 
+    internal VramMirroring Mirroring { get; set; }
+
     internal PpuAddressRegister PpuAddress => _ppuAddress;
 
     internal PpuControlRegister PpuControl => _ppuCtrl;
@@ -122,12 +122,58 @@ public class Ppu(Emulator emulator)
         return address switch
         {
             0x2000 => _ppuCtrl.Value,
+            0x2001 => _ppuMask.Value,
             0x2002 => ReadStatus( ),
+            0x2003 => _oamAddress,
             0x2004 => ReadOamData( ),
             0x2005 => _ppuScroll.Value,
+            0x2006 => (byte)(_ppuAddress.Value & 0xFF),
             0x2007 => ReadPpuData( ),
             _ => throw new AccessViolationException($"PPU在地址读取的寄存器无效 {address:x8}.")
         };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteRegister(ushort address, byte data)
+    {
+        _ppuStatus.LastRegisterWrite = data;
+        switch(address)
+        {
+            case 0x2000:
+                WriteControlRegister(data);
+                break;
+
+            case 0x2001:
+                WriteMaskRegister(data);
+                break;
+
+            case 0x2003:
+                WriteOamAddress(data);
+                break;
+
+            case 0x2004:
+                WriteOamData(data);
+                break;
+
+            case 0x2005:
+                WriteScrollRegister(data);
+                break;
+
+            case 0x2006:
+                WriteAddressRegister(data);
+                break;
+
+            case 0x2007:
+                WritePpuData(data);
+                break;
+
+            case 0x4014:
+                WriteOamDma(data);
+                break;
+
+            default:
+                throw new AccessViolationException("PPU寄存器写入寄存器无效： " + address.ToString("X4"));
+        }
     }
 
     public void Reset( )
@@ -135,7 +181,7 @@ public class Ppu(Emulator emulator)
         if(emulator.InstalledCartridge is null)
             throw new InvalidOperationException("未安装卡带。");
 
-        _mirroring = emulator.InstalledCartridge.Mirroring;
+        Mirroring = emulator.InstalledCartridge.Mirroring;
 
         _cycles = 340;
         _scanline = 240;
@@ -279,49 +325,6 @@ public class Ppu(Emulator emulator)
             emulator.Mapper.IrqTick( );
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteRegister(ushort address, byte data)
-    {
-        _ppuStatus.LastRegisterWrite = data;
-        switch(address)
-        {
-            case 0x2000:
-                WriteControlRegister(data);
-                break;
-
-            case 0x2001:
-                WriteMaskRegister(data);
-                break;
-
-            case 0x2003:
-                WriteOamAddress(data);
-                break;
-
-            case 0x2004:
-                WriteOamData(data);
-                break;
-
-            case 0x2005:
-                WriteScrollRegister(data);
-                break;
-
-            case 0x2006:
-                WriteAddressRegister(data);
-                break;
-
-            case 0x2007:
-                WritePpuData(data);
-                break;
-
-            case 0x4014:
-                WriteOamDma(data);
-                break;
-
-            default:
-                throw new AccessViolationException("PPU寄存器写入寄存器无效： " + address.ToString("X4"));
-        }
-    }
-
     public void Save(BinaryWriter writer)
     {
         writer.Write(_oam);
@@ -333,7 +336,7 @@ public class Ppu(Emulator emulator)
         writer.Write(_cycles);
         writer.Write(_f);
         writer.Write(_internalDataBuffer);
-        writer.Write((int)_mirroring);
+        writer.Write((int)Mirroring);
         writer.Write(_nameTableByte);
         writer.Write(_numSprites);
         writer.Write(_oamAddress);
@@ -360,7 +363,7 @@ public class Ppu(Emulator emulator)
         _cycles = reader.ReadInt32( );
         _f = reader.ReadByte( );
         _internalDataBuffer = reader.ReadByte( );
-        _mirroring = (VramMirroring)reader.ReadInt32( );
+        Mirroring = (VramMirroring)reader.ReadInt32( );
         _nameTableByte = reader.ReadByte( );
         _numSprites = reader.ReadInt32( );
         _oamAddress = reader.ReadByte( );
@@ -569,7 +572,7 @@ public class Ppu(Emulator emulator)
     private int MirrorVramAddress(ushort address)
     {
         var index = (address - 0x2000) % 0x1000;
-        switch(_mirroring)
+        switch(Mirroring)
         {
             case VramMirroring.Vertical:
                 if(index >= 0x800) index -= 0x800;
@@ -590,7 +593,7 @@ public class Ppu(Emulator emulator)
 
             case VramMirroring.Unknown:
             default:
-                throw new ArgumentOutOfRangeException(nameof(address), _mirroring, "VRAM镜像类型无效。");
+                throw new ArgumentOutOfRangeException(nameof(address), Mirroring, "VRAM镜像类型无效。");
         }
 
         return index;

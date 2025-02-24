@@ -1,14 +1,4 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2024
-// MIT License
-// ============================================================================
-
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -147,7 +137,7 @@ public class Cpu
     private bool _nmiInterruptTriggered;
 
     /// <summary>
-    /// 可屏蔽中断触发标志
+    /// IRQ(可屏蔽中断)触发标志
     /// </summary>
     private bool _irqInterruptTriggered;
 
@@ -226,6 +216,9 @@ public class Cpu
 
     #region Public Methods
 
+    /// <summary>
+    /// 反汇编
+    /// </summary>
     public string Disassemble(ushort offset, byte[] instruction)
     {
         var sb = new StringBuilder( );
@@ -1116,7 +1109,7 @@ public class Cpu
                 var pointer = _bus.ReadWord(address);
                 // NES的硬件bug，间接寻址时地址无法跨页
                 var hiAddress = (ushort)((pointer & 0xff) == 0xff ? pointer - 0xff : pointer + 1);
-                result = ((_bus.ReadByte((ushort)(pointer + 1)) << 8) | _bus.ReadByte(pointer)).WrapToWord( );
+                result = ((_bus.ReadByte(hiAddress) << 8) | _bus.ReadByte(pointer)).WrapToWord( );
                 break;
 
             case AddressingMode.IndexedIndirect:

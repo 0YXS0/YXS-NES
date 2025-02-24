@@ -3,31 +3,29 @@
 [Mapper(0, "NROM")]
 internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
 {
-    #region Private Methods
+    private readonly byte[] m_ChrRom = emulator.InstalledCartridge!.ChrData;
+    private readonly byte[] m_PrgRom = emulator.InstalledCartridge!.PrgRom;
+    private readonly int m_PrgRomBankNum = emulator.InstalledCartridge!.PrgRomBanks;
+    private readonly byte[] m_PrgRam = new byte[0x2000];
 
-    private static ushort MapAddress(Cartridge cartridge, ushort address)
+    private static ushort MapAddress(int bankNum, ushort address)
     {
         var mappedAddress = (ushort)(address - 0x8000);
-        mappedAddress = cartridge.PrgRomBanks == 1
+        mappedAddress = bankNum == 1
             ? (ushort)(mappedAddress % 0x4000) // Mirrors 0x8000 - 0xBFFF for NROM-128 (PRG ROM BANKS = 1)
             : mappedAddress;
 
         return mappedAddress;
     }
 
-    #endregion Private Methods
-
-    #region Public Methods
-
     public override byte ReadByte(ushort address)
     {
         return address switch
         {
-            < 0x2000 => m_emulator.InstalledCartridge?.ChrData[address] ?? default,
-            >= 0x8000 => m_emulator.InstalledCartridge?.PrgRom[MapAddress(m_emulator.InstalledCartridge, address)]
-                         ??
-                         default,
-            _ => 0
+            < 0x2000 => m_ChrRom[address],
+            < 0x6000 => 0,
+            < 0x8000 => m_PrgRam[address - 0x6000],
+            <= 0xFFFF => m_PrgRom[MapAddress(m_PrgRomBankNum, address)],
         };
     }
 
@@ -35,9 +33,13 @@ internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
     {
         if(address < 0x2000)
         {
-            m_emulator.InstalledCartridge!.ChrData[address] = value;
+            m_ChrRom[address] = value;
+        }
+        else if(address < 0x6000)
+        { }
+        else if(address < 0x8000)
+        {
+            m_PrgRam[address - 0x6000] = value;
         }
     }
-
-    #endregion Public Methods
 }

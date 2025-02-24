@@ -36,6 +36,10 @@ public class Bus(Emulator emulator)
     #endregion Protected Fields
 
     #region Internal Methods
+
+    /// <summary>
+    /// 根据地址、索引、大小从内存中读取数据到buffer中
+    /// </summary>
     internal void DirectMemoryRead(byte[] buffer, int start, ushort address, int size)
     {
         var index = start;
@@ -54,16 +58,6 @@ public class Bus(Emulator emulator)
 
     #endregion Internal Methods
 
-    #region Private Methods
-
-    private static ushort MapPpuRegisterAddress(ushort address)
-    {
-        if(address == 0x4014) return address;
-        return (ushort)(0x2000 + (address - 0x2000) % 8);
-    }
-
-    #endregion Private Methods
-
     #region Public Methods
 
     /// <summary>
@@ -77,12 +71,13 @@ public class Bus(Emulator emulator)
         return address switch
         {
             < 0x2000 => _ram[address & 0x07FF],
-            >= 0x2000 and <= 0x3fff => emulator.Ppu.ReadRegister(MapPpuRegisterAddress(address)),
+            <= 0x3fff => emulator.Ppu.ReadRegister((ushort)(0x2000 + (address - 0x2000) % 8)),
+            0x4014 => emulator.Ppu.ReadRegister(address),
             0x4015 => emulator.Apu.ReadRegister(address),
             0x4016 => emulator.Controller.ReadControllerInput(1),
             0x4017 => emulator.Controller.ReadControllerInput(2),
-            <= 0x401f => 0,
-            _ => emulator.Mapper.ReadByte(address) // In case for addresses >= 0x4020
+            > 0x40FF => emulator.Mapper.ReadByte(address),
+            _ => 0
         };
     }
 
@@ -93,10 +88,6 @@ public class Bus(Emulator emulator)
         return (ushort)((hi << 8) | lo);
     }
 
-    /// <summary>
-    ///     Resets the internal memory.
-    /// </summary>
-    public void Reset( ) => Array.Clear(_ram, 0, _ram.Length);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void WriteByte(ushort address, byte data)
     {
@@ -106,22 +97,27 @@ public class Bus(Emulator emulator)
                 _ram[address % 0x800] = data;
                 break;
 
-            case >= 0x2000 and <= 0x3fff or 0x4014:
-                emulator.Ppu.WriteRegister(MapPpuRegisterAddress(address), data);
+            case <= 0x3fff:
+                emulator.Ppu.WriteRegister((ushort)(0x2000 + (address - 0x2000) % 8), data);
+                break;
+
+            case 0x4014:
+                emulator.Ppu.WriteRegister(address, data);
                 break;
 
             case 0x4016:
                 emulator.Controller.WriteControllerInput(data);
                 break;
 
-            case >= 0x4000 and <= 0x4017 and not 0x4009 and not 0x400D:
+            case >= 0x4000 and <= 0x4008:
+            case >= 0x400A and <= 0x400C:
+            case >= 0x400E and <= 0x4013:
+            case 0x4015:
+            case 0x4017:
                 emulator.Apu.WriteRegister(address, data);
                 break;
 
-            case <= 0x401f:
-                break;
-
-            default:
+            case > 0x40FF:
                 emulator.Mapper.WriteByte(address, data);
                 break;
         }
@@ -134,6 +130,11 @@ public class Bus(Emulator emulator)
         WriteByte(address, lo);
         WriteByte((ushort)(address + 1), hi);
     }
+
+    /// <summary>
+    /// 重置内存数据
+    /// </summary>
+    public void Reset( ) => Array.Clear(_ram, 0, _ram.Length);
 
     /// <summary>
     /// 存档

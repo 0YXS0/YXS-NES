@@ -5,31 +5,40 @@ namespace Nes.Core.Mappers;
 [Mapper(0x02, "UxROM")]
 internal sealed class UxRomMapper : Mapper
 {
-    public UxRomMapper(Emulator emulator)
-        : base(emulator)
+    private readonly byte[] m_ChrRom;
+    private readonly byte[] m_PrgRom;
+    private readonly int m_PrgRomSize;
+    private readonly int m_PrgRomBankNum;
+    private readonly byte[] m_PrgRam = new byte[0x2000];
+
+    private readonly int m_bankOffset1;
+    private int m_bankOffset0;
+
+    public UxRomMapper(Emulator emulator) : base(emulator)
     {
-        if(emulator.InstalledCartridge is null)
-            throw new InvalidOperationException("模拟器为空。");
+        if(emulator.InstalledCartridge == null)
+            throw new InvalidOperationException("UxRom未安装卡带。");
+        m_ChrRom = emulator.InstalledCartridge.ChrData;
+        m_PrgRom = emulator.InstalledCartridge.PrgRom;
+        m_PrgRomSize = emulator.InstalledCartridge.PrgRomSize;
+        m_PrgRomBankNum = emulator.InstalledCartridge.PrgRomBanks;
 
-        _bank0 = 0;
-        if(emulator.InstalledCartridge.PrgRomBanks > 1)
-            _bank1 = (emulator.InstalledCartridge.PrgRomBanks - 1) * 0x4000;
+        m_bankOffset0 = 0;
+        if(m_PrgRomBankNum > 1)
+            m_bankOffset1 = (m_PrgRomBankNum - 1) * 0x4000;
         else
-            _bank1 = 0;
+            m_bankOffset1 = 0;
     }
-
-    private readonly int _bank1;
-
-    private int _bank0;
 
     public override byte ReadByte(ushort address)
     {
         return address switch
         {
-            < 0x2000 => m_emulator.InstalledCartridge?.ChrData[address] ?? default,
-            >= 0x8000 and <= 0xbfff => m_emulator.InstalledCartridge?.PrgRom[_bank0 + (address - 0x8000)] ?? default,
-            >= 0xc000 and <= 0xffff => m_emulator.InstalledCartridge?.PrgRom[_bank1 + (address - 0xC000)] ?? default,
-            _ => 0
+            < 0x2000 => m_ChrRom[address],
+            < 0x6000 => throw new InvalidOperationException("UxRom意料之外的读取操作。"),
+            < 0x8000 => m_PrgRam[address - 0x6000],
+            <= 0xBFFF => m_PrgRom[m_bankOffset0 + (address - 0x8000)],
+            <= 0xFFFF => m_PrgRom[m_bankOffset1 + (address - 0xC000)],
         };
     }
 
@@ -38,18 +47,20 @@ internal sealed class UxRomMapper : Mapper
         switch(address)
         {
             case < 0x2000:
-                m_emulator.InstalledCartridge!.ChrData[address] = value;
+                m_ChrRom[address] = value;
                 break;
 
-            case >= 0x8000:
-                // Bank select
-                // 7  bit  0
-                // ---- ----
-                // xxxx pPPP
-                //      ||||
-                //      ++++- Select 16 KB PRG ROM bank for CPU $8000-$BFFF
-                //           (UNROM uses bits 2-0; UOROM uses bits 3-0)
-                _bank0 = (value & 0xf) * 0x4000;
+            case < 0x6000:
+                break;
+
+            case < 0x8000:
+                m_PrgRam[address - 0x6000] = value;
+                break;
+
+            case <= 0xFFFF:
+                m_bankOffset0 = (value & 0x0F) * 0x4000;
+                if(m_bankOffset0 > m_PrgRomSize)
+                    m_bankOffset0 %= m_PrgRomSize;
                 break;
         }
     }

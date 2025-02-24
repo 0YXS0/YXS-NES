@@ -1,21 +1,10 @@
-﻿// ============================================================================
-//  _ __   ___  ___  ___ _ __ ___  _   _
-// | '_ \ / _ \/ __|/ _ \ '_ ` _ \| | | |
-// | | | |  __/\__ \  __/ | | | | | |_| |
-// |_| |_|\___||___/\___|_| |_| |_|\__,_|
-//
-// NES Emulator by daxnet, 2023
-// MIT License
-// ============================================================================
+﻿namespace Nes.Core;
 
-namespace Nes.Core
+public enum VramMirroring
 {
-    public enum VramMirroring
-    {
-        Horizontal,
-        Vertical,
-        SingleLower,
-        SingleUpper,
-        Unknown = 0xff
-    }
+    Horizontal,
+    Vertical,
+    SingleLower,
+    SingleUpper,
+    Unknown = 0xff
 }

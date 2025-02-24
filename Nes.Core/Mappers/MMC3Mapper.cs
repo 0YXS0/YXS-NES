@@ -78,7 +78,7 @@ class MMC3Mapper : Mapper
             m_PrgRam[(ushort)(address - 0x6000)] = value;
     }
 
-    public void SaveState(BinaryWriter binaryWriter)
+    public void Save(BinaryWriter binaryWriter)
     {
         binaryWriter.Write(registerIndex);
         binaryWriter.Write(registers);
@@ -93,7 +93,7 @@ class MMC3Mapper : Mapper
         binaryWriter.Write(irqEnable);
     }
 
-    public void LoadState(BinaryReader binaryReader)
+    public void Load(BinaryReader binaryReader)
     {
         registerIndex = binaryReader.ReadByte( );
         registers = binaryReader.ReadBytes(8);
@@ -156,8 +156,8 @@ class MMC3Mapper : Mapper
 
     private void WriteMirror(byte value)
     {
-        m_emulator.InstalledCartridge!.Mirroring = (value & 1) == 0 ?
-            VramMirroring.SingleLower : VramMirroring.Horizontal;
+        m_emulator.Ppu.Mirroring = (value & 1) == 0 ?
+            VramMirroring.Vertical : VramMirroring.Horizontal;
     }
 
     private void WriteProtect(byte value)
