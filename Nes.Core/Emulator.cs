@@ -210,9 +210,9 @@ public class Emulator
     public void InstallCartridge(Cartridge cartridge)
     {
         InstalledCartridge = cartridge;
-        var mapperRegistry = _registeredMapperTypes.FirstOrDefault(r => r.Number == InstalledCartridge.Mapper)
+        var mapperRegistry = _registeredMapperTypes.FirstOrDefault(r => r.Number == InstalledCartridge.MapperNum)
                              ?? throw new NotSupportedException(
-                                 $"不支持当前Mapper{InstalledCartridge.Mapper}");
+                                 $"不支持当前Mapper{InstalledCartridge.MapperNum}");
         _mapper = mapperRegistry.Factory(this);
     }
 
@@ -249,11 +249,11 @@ public class Emulator
     {
         writer.Write(_frameflip);
         InstalledCartridge?.Save(writer);
+        Mapper.Save(writer);
         Controller.Save(writer);
         Cpu.Save(writer);
         Bus.Save(writer);
         Ppu.Save(writer);
-        //Apu.Save(writer);
     }
 
     /// <summary>
@@ -263,11 +263,11 @@ public class Emulator
     {
         _frameflip = reader.ReadBoolean( );
         InstalledCartridge?.Load(reader);
+        Mapper.Load(reader);
         Controller.Load(reader);
         Cpu.Load(reader);
         Bus.Load(reader);
         Ppu.Load(reader);
-        //Apu.Load(reader);
     }
 
     #endregion Public Methods

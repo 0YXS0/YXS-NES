@@ -344,6 +344,12 @@ public partial class MainWindow : Window
 
     private void SelectSaveFileWindow_OpenEventHandle(ContentDialog sender, ContentDialogOpenedEventArgs args)
     {
+        // 清空存档信息
+        for(var index = 0; index < 6; index++)
+        {
+            m_SelectSaveFileWindowVM.SaveInfos[index] = new( );
+        }
+
         // 如果游戏没有运行, 则不读取
         if(m_GameControl.GameStatus == 0) return;
         if(m_GameControl.GameName is null) return;

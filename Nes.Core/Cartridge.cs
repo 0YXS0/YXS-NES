@@ -52,7 +52,7 @@ public class Cartridge
         }
 
         IsBatteryBacked = Bit.HasSet(raw[6], 1);
-        Mapper = (raw[7] & 0b1111_0000) | (raw[6] >> 4);
+        MapperNum = (raw[7] & 0b1111_0000) | (raw[6] >> 4);
         TvSystem = (TvSystem)(raw[9] & 1);
 
         PrgRomBanks = raw[4];
@@ -101,7 +101,7 @@ public class Cartridge
 
     public bool IsBatteryBacked { get; }
 
-    public int Mapper { get; }
+    public int MapperNum { get; }
 
     public VramMirroring Mirroring { get; private set; }
 

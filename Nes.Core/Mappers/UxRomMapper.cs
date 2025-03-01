@@ -64,4 +64,16 @@ internal sealed class UxRomMapper : Mapper
                 break;
         }
     }
+
+    public override void Save(System.IO.BinaryWriter writer)
+    {
+        writer.Write(m_PrgRam);
+        writer.Write(m_bankOffset0);
+    }
+
+    public override void Load(System.IO.BinaryReader reader)
+    {
+        reader.Read(m_PrgRam);
+        m_bankOffset0 = reader.ReadInt32( );
+    }
 }

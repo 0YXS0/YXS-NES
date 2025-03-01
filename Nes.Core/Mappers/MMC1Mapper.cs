@@ -1,4 +1,6 @@
-﻿namespace Nes.Core.Mappers;
+﻿using System.IO;
+
+namespace Nes.Core.Mappers;
 
 [Mapper(1, "MMC1")]
 internal sealed class MMC1Mapper : Mapper
@@ -156,5 +158,35 @@ internal sealed class MMC1Mapper : Mapper
                 m_ChrBankOffsets[1] = m_ChrBank1 * m_ChrBankSize;
                 break;
         }
+    }
+
+    public override void Save(BinaryWriter writer)
+    {
+        writer.Write(m_PrgRam);
+        writer.Write(m_ShiftCount);
+        writer.Write(m_ShiftRegister);
+        writer.Write(m_ControlRegister);
+        writer.Write(m_ChrBank0);
+        writer.Write(m_ChrBank1);
+        writer.Write(m_PrgBank);
+        foreach(var offset in m_PrgBankOffsets)
+            writer.Write(offset);
+        foreach(var offset in m_ChrBankOffsets)
+            writer.Write(offset);
+    }
+
+    public override void Load(BinaryReader reader)
+    {
+        reader.Read(m_PrgRam);
+        m_ShiftCount = reader.ReadByte( );
+        m_ShiftRegister = reader.ReadByte( );
+        m_ControlRegister = reader.ReadByte( );
+        m_ChrBank0 = reader.ReadByte( );
+        m_ChrBank1 = reader.ReadByte( );
+        m_PrgBank = reader.ReadByte( );
+        for(int i = 0; i < m_PrgBankOffsets.Length; i++)
+            m_PrgBankOffsets[i] = reader.ReadInt32( );
+        for(int i = 0; i < m_ChrBankOffsets.Length; i++)
+            m_ChrBankOffsets[i] = reader.ReadInt32( );
     }
 }

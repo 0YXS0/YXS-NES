@@ -1,4 +1,6 @@
-﻿namespace Nes.Core.Mappers;
+﻿using System.IO;
+
+namespace Nes.Core.Mappers;
 
 [Mapper(0, "NROM")]
 internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
@@ -41,5 +43,15 @@ internal sealed class NRomMapper(Emulator emulator) : Mapper(emulator)
         {
             m_PrgRam[address - 0x6000] = value;
         }
+    }
+
+    public override void Save(BinaryWriter writer)
+    {
+        writer.Write(m_PrgRam);
+    }
+
+    public override void Load(BinaryReader reader)
+    {
+        reader.Read(m_PrgRam);
     }
 }
